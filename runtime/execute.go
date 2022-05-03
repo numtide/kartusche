@@ -3,12 +3,14 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -39,8 +41,6 @@ func New(fileName string, pathPrefix string) (Runtime, error) {
 
 	r := mux.NewRouter()
 
-	prefixRoute := r.PathPrefix(pathPrefix)
-
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
 		handlersPath := dbpath.ToPath("__handlers__")
 		for it := tx.Iterator(handlersPath); !it.IsDone(); it.Next() {
@@ -61,14 +61,37 @@ func New(fileName string, pathPrefix string) (Runtime, error) {
 				return fmt.Errorf("while compiling %s: %w", sourcePath, err)
 			}
 
-			prefixRoute.Path(md.Path).Methods(md.Method).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			prefixRoute := r.PathPrefix(pathPrefix)
+
+			prefixRoute.Methods(md.Method).Path(md.Path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				vars := mux.Vars(r)
 				vm := goja.New()
 				vm.Set("vars", vars)
 				vm.Set("r", r)
 				vm.Set("w", w)
+				vm.Set("read", reader(db))
+				vm.Set("write", writer(db))
+				vm.Set("uuidv4", uuid.NewV4)
+				vm.Set("uuidv7", func() (string, error) {
+					id, err := uuid.NewV7(uuid.NanosecondPrecision)
+					if err != nil {
+						return "", err
+					}
+					return id.String(), nil
+				})
+				vm.Set("requestBody", func() (string, error) {
+					fmt.Println("reading body")
+					d, err := io.ReadAll(r.Body)
+					if err != nil {
+						return "", fmt.Errorf("while reading request body: %w", err)
+					}
+
+					return string(d), nil
+				})
+
 				_, err := vm.RunProgram(program)
 				if err != nil {
+					fmt.Println(err)
 					http.Error(w, err.Error(), 500)
 				}
 			})
