@@ -140,7 +140,7 @@ func (w *world) iGetThePathFromTheKartusche(path string) error {
 func (w *world) iShouldGetStatusCode(expectedStatusCode int) error {
 	sc := w.httpResponse.Result().StatusCode
 	if sc != expectedStatusCode {
-		return fmt.Errorf("unexpected status code: %d, expected: %d", sc, expectedStatusCode)
+		return fmt.Errorf("unexpected status: %s, expected: %d", w.httpResponse.Result().Status, expectedStatusCode)
 	}
 	return nil
 }

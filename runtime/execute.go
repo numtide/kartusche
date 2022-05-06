@@ -66,6 +66,7 @@ func New(fileName string, pathPrefix string) (Runtime, error) {
 			prefixRoute.Methods(md.Method).Path(md.Path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				vars := mux.Vars(r)
 				vm := goja.New()
+				vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 				vm.Set("vars", vars)
 				vm.Set("r", r)
 				vm.Set("w", w)
@@ -80,7 +81,6 @@ func New(fileName string, pathPrefix string) (Runtime, error) {
 					return id.String(), nil
 				})
 				vm.Set("requestBody", func() (string, error) {
-					fmt.Println("reading body")
 					d, err := io.ReadAll(r.Body)
 					if err != nil {
 						return "", fmt.Errorf("while reading request body: %w", err)

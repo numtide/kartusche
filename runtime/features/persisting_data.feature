@@ -3,14 +3,14 @@ Feature: persisting data
     Scenario: storing and retrieving single string
         Given a service with the "GET" handler "/data"
             """
-            w.Write(read((tx) => tx.Get(["data"])))
+            w.write(read((tx) => tx.get(["data"])))
             """
-        Given a service with the "POST" handler "/data"
+        And a service with the "POST" handler "/data"
             """
             write((tx) => {
-                tx.Put(["data"],requestBody())
+                tx.put(["data"],requestBody())
             })
-            w.WriteHeader(204)
+            w.writeHeader(204)
             """
         When I post following data to the "/data" path of the Kartusche
             """
