@@ -10,6 +10,10 @@ func main() {
 		Action: func(ctx *cli.Context) error {
 			return nil
 		},
+		Commands: []*cli.Command{
+			testCommand,
+		},
 	}
 	app.RunAndExitOnError()
+
 }
