@@ -64,8 +64,6 @@ var testCommand = &cli.Command{
 			return fmt.Errorf("while tarring content: %w", err)
 		}
 
-		os.WriteFile("x.tar", tarBytes, 0700)
-
 		programs = append(programs, ps, exp)
 		status := godog.TestSuite{
 			Name: "tests",

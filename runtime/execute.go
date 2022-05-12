@@ -14,6 +14,7 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 )
@@ -146,6 +147,12 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 	r := mux.NewRouter()
 
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
+
+		jslib, err := jslib.Load(tx)
+		if err != nil {
+			return err
+		}
+
 		apiPath := dbpath.ToPath("api")
 		if !tx.Exists(apiPath) {
 			return nil
@@ -180,6 +187,7 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						vars := mux.Vars(r)
 						vm := goja.New()
 						vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
+						vm.Set("require", jslib.Require(vm))
 						vm.Set("vars", vars)
 						vm.Set("r", r)
 						vm.Set("w", w)
