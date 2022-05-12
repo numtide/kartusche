@@ -1,0 +1,9 @@
+* rename `api` to `handlers`
+* add support for static files
+    * support etags
+* separate data from api/static by prefixing all dbpaths with 'data'
+* support for websockets
+    * `websocket.js` handler
+        * TBD the API for callbacks etc
+    * add `watch` function for database
+* add access to runtime DB from the cucumber tests
