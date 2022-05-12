@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	_ "embed"
+
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
@@ -15,6 +17,19 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 )
+
+//go:embed stdlib.js
+var stdlibSource string
+
+var compiledStdlib *goja.Program
+
+func init() {
+	var err error
+	compiledStdlib, err = goja.Compile("stdlib.js", stdlibSource, false)
+	if err != nil {
+		panic(fmt.Errorf("while compiling stdlib: %w", err))
+	}
+}
 
 // type HandlerMeta struct {
 // 	Method string `json:"method"`
@@ -170,6 +185,11 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						vm.Set("w", w)
 						vm.Set("read", reader(db))
 						vm.Set("write", writer(db))
+						_, err = vm.RunProgram(compiledStdlib)
+						if err != nil {
+							http.Error(w, err.Error(), 500)
+							return
+						}
 						vm.Set("uuidv4", func() (string, error) {
 							id, err := uuid.NewV4()
 							if err != nil {
@@ -198,6 +218,7 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						if err != nil {
 							fmt.Println(err)
 							http.Error(w, err.Error(), 500)
+							return
 						}
 					})
 
