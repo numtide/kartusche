@@ -75,8 +75,6 @@ func (l *Libs) Require(vm *goja.Runtime) func(name string) (goja.Value, error) {
 			return nil, err
 		}
 
-		fmt.Println("initialized", name)
-
 		l.val = val
 
 		return val, nil

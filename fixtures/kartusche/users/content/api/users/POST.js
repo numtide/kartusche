@@ -1,20 +1,17 @@
-const { UserError } = require("lib/status_codes")
+const { inputError } = require("lib/responses")
 
 const { email, username, password } = JSON.parse(requestBody())
 const handler = () => {
     if (!email || !email.match(/^[^@]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/)) {
-        jsonResponse(UserError, { error: "invalid_email" })
-        return
+        return inputError("invalid_email")
     }
 
     if (!username || !username.match(/^[a-zA-Z0-9_-]+$/)) {
-        jsonResponse(UserError, { error: "invalid_username" })
-        return
+        return inputError("invalid_username")
     }
 
     if (!password || !password.toLowerCase().match(/^.{3,}$/)) {
-        jsonResponse(UserError, { error: "invalid_password" })
-        return
+        return inputError("invalid_password")
     }
 
     const userId = uuidv4()
