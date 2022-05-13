@@ -41,6 +41,12 @@ func nArgFuncType(n int) reflect.Type {
 var testCommand = &cli.Command{
 	Name: "test",
 	Action: func(ctx *cli.Context) error {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("while getting CWD: %w", err)
+		}
+
+		kartuscheName := filepath.Base(currentDir)
 		programs := []*goja.Program{}
 		ps, err := goja.Compile(`step.js`, `
 			function step(matcher, fn) {
@@ -66,7 +72,7 @@ var testCommand = &cli.Command{
 
 		programs = append(programs, ps, exp)
 		status := godog.TestSuite{
-			Name: "tests",
+			Name: kartuscheName,
 			TestSuiteInitializer: func(tsc *godog.TestSuiteContext) {
 				err := filepath.WalkDir("tests/support", func(path string, d fs.DirEntry, err error) error {
 					if err != nil {

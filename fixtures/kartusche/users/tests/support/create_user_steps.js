@@ -8,13 +8,4 @@ step(`^I create a new user that does not exist$`, () => {
 step(`^I the user should exist$`, () => {
     const res = apiCall("GET",`/users/${world.userId}`)
     expect.equal(res.statusCode, 200)
-    println(readToString(res.body))
-
-})
-
-step(`^the user name should be "([^"]*)"$`, (expectedUsername) => {
-    // println(`expected: ${expectedUsername}`)
-    // if (expectedUsername !== "ha!") {
-    //     throw new Error("nope!")
-    // }
 })
