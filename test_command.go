@@ -143,6 +143,10 @@ var testCommand = &cli.Command{
 						return nil, fmt.Errorf("while creating new request: %w", err)
 					}
 
+					for k, v := range headers {
+						req.Header.Set(k, v)
+					}
+
 					kartusche.ServeHTTP(rec, req)
 
 					return rec.Result(), nil

@@ -1,9 +1,12 @@
 package runtime
 
 import (
+	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"path"
+	"time"
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
@@ -31,7 +34,7 @@ func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx, db bolted.Databas
 			fullPathWithoutStatic := []string(fullPath)[1:]
 			requestPath := "/" + path.Join(fullPathWithoutStatic...)
 
-			handler, err := staticContentHandler(fullPath, db)
+			handler, err := staticContentHandler(fullPath, db, requestPath)
 			if err != nil {
 				return fmt.Errorf("while creating static handler for %s: %w", requestPath, err)
 			}
@@ -49,8 +52,8 @@ func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx, db bolted.Databas
 
 }
 
-func staticContentHandler(dbPath dbpath.Path, db bolted.Database) (http.HandlerFunc, error) {
-
+func staticContentHandler(dbPath dbpath.Path, db bolted.Database, name string) (http.HandlerFunc, error) {
+	t := time.Now()
 	readContent := func() ([]byte, error) {
 		tx, err := db.BeginRead()
 		if err != nil {
@@ -73,16 +76,12 @@ func staticContentHandler(dbPath dbpath.Path, db bolted.Database) (http.HandlerF
 
 	contentType := http.DetectContentType(d)
 
+	sum := sha1.Sum(d)
+	etag := fmt.Sprintf(`"%x"`, sum[:])
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		content, err := readContent()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-
 		w.Header().Set("content-type", contentType)
-
-		w.Write(content)
-
+		w.Header().Set("etag", etag)
+		http.ServeContent(w, r, name, t, bytes.NewReader(d))
 	}, nil
 }
