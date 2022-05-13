@@ -153,11 +153,11 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 			return err
 		}
 
-		apiPath := dbpath.ToPath("api")
-		if !tx.Exists(apiPath) {
+		handlersPath := dbpath.ToPath("handler")
+		if !tx.Exists(handlersPath) {
 			return nil
 		}
-		toDo := []dbpath.Path{apiPath}
+		toDo := []dbpath.Path{handlersPath}
 
 		for len(toDo) > 0 {
 			current := toDo[0]
