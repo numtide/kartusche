@@ -19,6 +19,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/dop251/goja"
 	"github.com/draganm/kartusche/runtime"
+	_ "github.com/draganm/kartusche/tests"
 	"github.com/urfave/cli/v2"
 )
 
@@ -192,7 +193,7 @@ var testCommand = &cli.Command{
 
 			},
 			Options: &godog.Options{
-				Format:              "progress",
+				Format:              "kartusche",
 				Paths:               []string{"tests/features"},
 				NoColors:            true,
 				Strict:              true,
@@ -201,7 +202,7 @@ var testCommand = &cli.Command{
 			},
 		}.Run()
 
-		return cli.Exit("godog", status)
+		return cli.Exit("", status)
 	},
 }
 

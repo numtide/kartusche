@@ -6,7 +6,6 @@ require (
 	github.com/dop251/goja v0.0.0-20220430115111-e1f9dc0755e7
 	github.com/draganm/bolted v0.8.1
 	github.com/gorilla/mux v1.8.0
-	github.com/nsf/jsondiff v0.0.0-20210926074059-1e845ec5d249
 	github.com/urfave/cli/v2 v2.3.0
 )
 

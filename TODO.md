@@ -1,7 +1,7 @@
 * ~~rename `api` to `handlers`~~
 * ~~add support for static files~~
     * ~~support etags~~
-* custom godog formatter to spew out JS code for missing steps
+* ~~custom godog formatter to spew out JS code for missing steps~~
 * separate data from api/static by prefixing all dbpaths with 'data'
 * support for websockets
     * `websocket.js` handler
