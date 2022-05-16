@@ -11,6 +11,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/gofrs/uuid"
 )
 
@@ -33,6 +34,11 @@ func InitializeNew(fileName string, pathPrefix string, r *tar.Reader) (err error
 			err = wtx.Finish()
 		}
 	}()
+
+	err = wtx.CreateMap(dbpath.ToPath("data"))
+	if err != nil {
+		return err
+	}
 
 	initScript := ""
 	for {
@@ -83,7 +89,7 @@ func InitializeNew(fileName string, pathPrefix string, r *tar.Reader) (err error
 
 	vm := goja.New()
 	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
-	vm.Set("tx", wtx)
+	vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: wtx})
 	vm.Set("uuidv4", uuid.NewV4)
 	vm.Set("uuidv7", func() (string, error) {
 		id, err := uuid.NewV7(uuid.NanosecondPrecision)

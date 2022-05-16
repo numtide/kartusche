@@ -13,6 +13,7 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -108,8 +109,10 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						vm.Set("vars", vars)
 						vm.Set("r", r)
 						vm.Set("w", w)
-						vm.Set("read", reader(db))
-						vm.Set("write", writer(db))
+						vm.Set("println", fmt.Println)
+						dbw := dbwrapper.New(db)
+						vm.Set("read", dbw.Read)
+						vm.Set("write", dbw.Write)
 						_, err = vm.RunProgram(compiledStdlib)
 						if err != nil {
 							http.Error(w, err.Error(), 500)

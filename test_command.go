@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	rt "runtime"
 	"strings"
 
 	_ "embed"
@@ -199,6 +200,7 @@ var testCommand = &cli.Command{
 				Strict:              true,
 				StopOnFailure:       true,
 				ShowStepDefinitions: false,
+				Concurrency:         rt.NumCPU(),
 			},
 		}.Run()
 
