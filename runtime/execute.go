@@ -142,6 +142,16 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 							return string(d), nil
 						})
 
+						ctx := r.Context()
+
+						go func() {
+							<-ctx.Done()
+							e := ctx.Err()
+							if e != nil {
+								vm.Interrupt(ctx.Err())
+							}
+						}()
+
 						_, err := vm.RunProgram(program)
 						if err != nil {
 							fmt.Println(err)

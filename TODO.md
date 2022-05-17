@@ -3,6 +3,7 @@
     * ~~support etags~~
 * ~~custom godog formatter to spew out JS code for missing steps~~
 * ~~separate data from api/static by prefixing all dbpaths with 'data'~~
+* ~~support for context.Context~~
 * support for websockets
     * `websocket.js` handler
         * TBD the API for callbacks etc
@@ -30,7 +31,6 @@
 * support for Kartusche audit log
 * support on the js level for uploading content directly into the db
 * support on the js level for fetching content directly from the db
-* support request context when executing handlers
 * support for the server to capture kartusche failures
     * current content of Kartusche
     * offending http requests
