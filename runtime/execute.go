@@ -149,9 +149,7 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						})
 
 						vm.Set("select", func(selectables ...selectable) (err error) {
-							defer func() {
-								fmt.Println("select finished", err)
-							}()
+
 							// reflect.SelectCase
 							cases := make([]reflect.SelectCase, len(selectables))
 							for i, s := range selectables {
@@ -163,13 +161,11 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 							for {
 								chosen, val, ok := reflect.Select(cases)
 								if !ok {
-									fmt.Printf("chosen %d, ok %t\n", chosen, ok)
 									// TODO - return something else?
 									return nil
 								}
 								done, err := selectables[chosen].Fn()(val)
 								if err != nil {
-									fmt.Printf("while selecting: %w", err)
 									continue
 								}
 								if done {
