@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"reflect"
 	"strings"
 
 	_ "embed"
@@ -17,6 +18,7 @@ import (
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 //go:embed stdlib.js
@@ -113,6 +115,10 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						dbw := dbwrapper.New(db)
 						vm.Set("read", dbw.Read)
 						vm.Set("write", dbw.Write)
+						vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
+							os, _ := dbw.Watch(path, fn)
+							return os
+						})
 						_, err = vm.RunProgram(compiledStdlib)
 						if err != nil {
 							http.Error(w, err.Error(), 500)
@@ -140,6 +146,73 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 							}
 
 							return string(d), nil
+						})
+
+						vm.Set("select", func(selectables ...selectable) (err error) {
+							defer func() {
+								fmt.Println("select finished", err)
+							}()
+							// reflect.SelectCase
+							cases := make([]reflect.SelectCase, len(selectables))
+							for i, s := range selectables {
+								cases[i] = reflect.SelectCase{
+									Dir:  reflect.SelectRecv,
+									Chan: s.SelectChan(),
+								}
+							}
+							for {
+								chosen, val, ok := reflect.Select(cases)
+								if !ok {
+									fmt.Printf("chosen %d, ok %t\n", chosen, ok)
+									// TODO - return something else?
+									return nil
+								}
+								done, err := selectables[chosen].Fn()(val)
+								if err != nil {
+									fmt.Printf("while selecting: %w", err)
+									continue
+								}
+								if done {
+									return nil
+								}
+							}
+
+						})
+
+						vm.Set("upgradeToWebsocket", func(handler func(interface{}) (bool, error)) (selectable, error) {
+							upgrader := websocket.Upgrader{
+								ReadBufferSize:  1024,
+								WriteBufferSize: 1024,
+							}
+
+							conn, err := upgrader.Upgrade(w, r, nil)
+							if err != nil {
+								return nil, err
+							}
+
+							ch := make(chan interface{}, 1)
+
+							go func() {
+								defer conn.Close()
+								defer close(ch)
+
+								for {
+									var v interface{}
+									err = conn.ReadJSON(&v)
+									if err != nil {
+										return
+									}
+									ch <- v
+								}
+
+							}()
+
+							vm.Set("wsSend", func(msg interface{}) error {
+								return conn.WriteJSON(msg)
+							})
+
+							return &defaultSelectable{ch: ch, fn: handler}, nil
+
 						})
 
 						ctx := r.Context()

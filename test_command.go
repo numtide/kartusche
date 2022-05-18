@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -21,6 +22,8 @@ import (
 	"github.com/dop251/goja"
 	"github.com/draganm/kartusche/runtime"
 	_ "github.com/draganm/kartusche/tests"
+	"github.com/draganm/kartusche/wsclient"
+	"github.com/gorilla/websocket"
 	"github.com/urfave/cli/v2"
 )
 
@@ -121,7 +124,11 @@ var testCommand = &cli.Command{
 					panic(fmt.Errorf("while opening Kartusche: %w", err))
 				}
 
+				server := httptest.NewServer(kartusche)
+
 				sc.After(func(ctx context.Context, sc *godog.Scenario, scenarioError error) (context.Context, error) {
+					server.CloseClientConnections()
+					server.Close()
 					err := kartusche.Shutdown()
 					if err != nil {
 						return ctx, fmt.Errorf("while shutting down Kartusche: %w", err)
@@ -136,11 +143,17 @@ var testCommand = &cli.Command{
 				})
 
 				vm := goja.New()
+				// TODO record open responses and close them after the scenario
+
 				vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 				vm.Set("println", fmt.Println)
 				vm.Set("apiCall", func(method, path, body string, headers map[string]string) (*http.Response, error) {
-					rec := httptest.NewRecorder()
-					req, err := http.NewRequest(method, path, strings.NewReader(body))
+					su, err := url.Parse(server.URL)
+					if err != nil {
+						return nil, fmt.Errorf("while parsing server url: %w", err)
+					}
+					su.Path = path
+					req, err := http.NewRequest(method, su.String(), strings.NewReader(body))
 					if err != nil {
 						return nil, fmt.Errorf("while creating new request: %w", err)
 					}
@@ -149,10 +162,31 @@ var testCommand = &cli.Command{
 						req.Header.Set(k, v)
 					}
 
-					kartusche.ServeHTTP(rec, req)
+					res, err := server.Client().Do(req)
+					if err != nil {
+						return nil, err
+					}
 
-					return rec.Result(), nil
+					return res, nil
 				})
+
+				vm.Set("connectWebsocket", func(path string) (*wsclient.WSClient, error) {
+					u, err := url.Parse(server.URL)
+					if err != nil {
+						return nil, err
+					}
+
+					u.Scheme = "ws"
+					u.Path = path
+					conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+					if err != nil {
+						return nil, err
+					}
+
+					return &wsclient.WSClient{Conn: conn}, nil
+
+				})
+
 				vm.Set("readToString", func(r io.Reader) (string, error) {
 					d, err := io.ReadAll(r)
 					if err != nil {

@@ -2,6 +2,7 @@ package dbwrapper
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
@@ -158,5 +159,24 @@ func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (interface{}, 
 	}()
 
 	return f(&WriteTxWrapper{WriteTx: tx})
+
+}
+
+type observeSelectable struct {
+	ch <-chan bolted.ObservedChanges
+	fn func(interface{}) (bool, error)
+}
+
+func (o *observeSelectable) SelectChan() reflect.Value {
+	return reflect.ValueOf(o.ch)
+}
+
+func (o *observeSelectable) Fn() func(interface{}) (bool, error) {
+	return o.fn
+}
+
+func (db *DB) Watch(matcher []string, fn func(interface{}) (bool, error)) (*observeSelectable, func()) {
+	ch, cancel := db.db.Observe(dataPath.Append(matcher...).ToMatcher())
+	return &observeSelectable{ch: ch, fn: fn}, cancel
 
 }
