@@ -1,6 +1,8 @@
+const { inputError } = require("lib/responses")
+
 const { email } = JSON.parse(requestBody())
 if (email === "") {
-    jsonResponse(400, { error: "invalid_email" })
+    inputError("invalid_email")
 } else {
     write(tx => {
         const us = JSON.parse(tx.get(["users", vars.user_id]))

@@ -11,8 +11,7 @@ import (
 )
 
 type library struct {
-	p   *goja.Program
-	val goja.Value
+	p *goja.Program
 }
 
 type Libs struct {
@@ -56,9 +55,15 @@ func Load(tx bolted.SugaredReadTx) (*Libs, error) {
 }
 
 func (l *Libs) Require(vm *goja.Runtime) func(name string) (goja.Value, error) {
+	loadedByName := map[string]goja.Value{}
 	return func(name string) (goja.Value, error) {
 		if !strings.HasSuffix(name, ".js") {
 			name = fmt.Sprintf("%s.js", name)
+		}
+
+		lv, found := loadedByName[name]
+		if found {
+			return lv, nil
 		}
 
 		l, found := l.byName[name]
@@ -66,16 +71,12 @@ func (l *Libs) Require(vm *goja.Runtime) func(name string) (goja.Value, error) {
 			return nil, fmt.Errorf("not found: %s", name)
 		}
 
-		if l.val != nil {
-			return l.val, nil
-		}
-
 		val, err := vm.RunProgram(l.p)
 		if err != nil {
 			return nil, err
 		}
 
-		l.val = val
+		loadedByName[name] = val
 
 		return val, nil
 
