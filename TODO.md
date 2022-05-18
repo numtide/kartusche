@@ -7,11 +7,11 @@
 * ~~support for websockets~~
 * ~~add `watch` function for database~~
 * ~~add support for `init.js` file~~
-* fix bug when requiring same library from multiple places
+* ~~fix bug when requiring same library from multiple places~~
 * add closing of http requests from tests
 * add code to close db watches from handlers
 * add special handler for websockets - GET is misleading
-* accelerate tests by creating one 'master' kartusche file and just copy it for each test
+* ~~accelerate tests by creating one 'master' kartusche file and just copy it for each test~~
 * wrap handlers into functions - support for easy return
 * add access to runtime DB from the cucumber tests
 * consider support for larger binary files (reading in tx instead of caching in mem)
