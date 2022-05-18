@@ -61,65 +61,89 @@ var testCommand = &cli.Command{
 		`, false)
 
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("while compiling step.js: %w", err)
 		}
 
 		exp, err := goja.Compile("expect.js", expectSource, false)
 
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("while compiling expect.js: %w", err)
 		}
+
+		programs = append(programs, ps, exp)
 
 		tarBytes, err := tarDirToByteSlice("content")
 		if err != nil {
 			return fmt.Errorf("while tarring content: %w", err)
 		}
 
-		programs = append(programs, ps, exp)
+		td, err := os.MkdirTemp("", "")
+		if err != nil {
+			return fmt.Errorf("while creating temp file: %w", err)
+		}
+
+		defer os.RemoveAll(td)
+
+		err = filepath.WalkDir("tests/support", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.Type().IsRegular() {
+				ext := filepath.Ext(d.Name())
+				if ext == ".js" {
+
+					d, err := os.ReadFile(path)
+					if err != nil {
+						return fmt.Errorf("while reading %s: %w", path, err)
+					}
+					p, err := goja.Compile(path, string(d), false)
+					if err != nil {
+						return fmt.Errorf("while compiling %s: %w", path, err)
+					}
+					programs = append(programs, p)
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("while compiling support files: %w", err)
+		}
+
+		masterKartuscheFile := filepath.Join(td, "kartusche")
+
+		err = runtime.InitializeNew(masterKartuscheFile, "/", tar.NewReader(bytes.NewReader(tarBytes)))
+		if err != nil {
+			return fmt.Errorf("while initializing Kartusche: %w", err)
+		}
+
 		status := godog.TestSuite{
 			Name: kartuscheName,
-			TestSuiteInitializer: func(tsc *godog.TestSuiteContext) {
-				err := filepath.WalkDir("tests/support", func(path string, d fs.DirEntry, err error) error {
-					if err != nil {
-						return err
-					}
-					if d.Type().IsRegular() {
-						ext := filepath.Ext(d.Name())
-						if ext == ".js" {
-
-							d, err := os.ReadFile(path)
-							if err != nil {
-								return fmt.Errorf("while reading %s: %w", path, err)
-							}
-							p, err := goja.Compile(path, string(d), false)
-							if err != nil {
-								return fmt.Errorf("while compiling %s: %w", path, err)
-							}
-							programs = append(programs, p)
-						}
-					}
-					return nil
-				})
-
-				if err != nil {
-					panic(err)
-				}
-			},
 			ScenarioInitializer: func(sc *godog.ScenarioContext) {
 
-				td, err := os.MkdirTemp("", "")
+				kartuscheFile, err := os.CreateTemp(td, "kartusche-*")
 				if err != nil {
-					panic(fmt.Errorf("while creating temp file: %w", err))
+					panic(fmt.Errorf("while creating temp kartusche file: %w", err))
 				}
 
-				kartuscheFile := filepath.Join(td, "kartusche")
-
-				err = runtime.InitializeNew(kartuscheFile, "/", tar.NewReader(bytes.NewReader(tarBytes)))
+				mkf, err := os.Open(masterKartuscheFile)
 				if err != nil {
-					panic(fmt.Errorf("while initializing Kartusche: %w", err))
+					panic(fmt.Errorf("while opening master kartusche file: %w", err))
 				}
 
-				kartusche, err := runtime.Open(kartuscheFile, "/")
+				defer mkf.Close()
+
+				_, err = io.Copy(kartuscheFile, mkf)
+				if err != nil {
+					panic(fmt.Errorf("while copying from master kartusche: %w", err))
+				}
+
+				err = kartuscheFile.Close()
+				if err != nil {
+					panic(fmt.Errorf("while closing kartusche file: %w", err))
+				}
+
+				kartusche, err := runtime.Open(kartuscheFile.Name(), "/")
 				if err != nil {
 					panic(fmt.Errorf("while opening Kartusche: %w", err))
 				}
@@ -132,11 +156,6 @@ var testCommand = &cli.Command{
 					err := kartusche.Shutdown()
 					if err != nil {
 						return ctx, fmt.Errorf("while shutting down Kartusche: %w", err)
-					}
-
-					err = os.RemoveAll(td)
-					if err != nil {
-						return ctx, fmt.Errorf("while removing Kartusche temp dir: %w", err)
 					}
 
 					return ctx, nil
