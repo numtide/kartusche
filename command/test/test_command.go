@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"archive/tar"
@@ -20,9 +20,9 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/dop251/goja"
+	"github.com/draganm/kartusche/command/test/wsclient"
 	"github.com/draganm/kartusche/runtime"
 	_ "github.com/draganm/kartusche/tests"
-	"github.com/draganm/kartusche/wsclient"
 	"github.com/gorilla/websocket"
 	"github.com/urfave/cli/v2"
 )
@@ -43,7 +43,7 @@ func nArgFuncType(n int) reflect.Type {
 	}
 }
 
-var testCommand = &cli.Command{
+var Command = &cli.Command{
 	Name: "test",
 	Action: func(ctx *cli.Context) error {
 		currentDir, err := os.Getwd()
