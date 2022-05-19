@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/command/test"
 	"github.com/urfave/cli/v2"
 )
@@ -13,6 +14,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			test.Command,
+			server.Command,
 		},
 	}
 	app.RunAndExitOnError()
