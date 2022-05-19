@@ -29,6 +29,11 @@ var Command = &cli.Command{
 			Value:   cli.NewStringSlice("localhost"),
 			EnvVars: []string{"HOSTNAMES"},
 		},
+		&cli.StringFlag{
+			Name:    "prefix",
+			Value:   "/",
+			EnvVars: []string{"PREFIX"},
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
@@ -69,6 +74,7 @@ var Command = &cli.Command{
 
 		q := url.Values{}
 		q["hostname"] = c.StringSlice("hostname")
+		q.Set("prefix", c.String("prefix"))
 
 		baseUrl.RawQuery = q.Encode()
 
