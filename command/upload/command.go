@@ -38,7 +38,7 @@ var Command = &cli.Command{
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
 			if err != nil {
-				err = cli.Exit(fmt.Errorf("while running server: %w", err), 1)
+				err = cli.Exit(fmt.Errorf("while uploading Kartusche: %w", err), 1)
 			}
 		}()
 
@@ -94,6 +94,8 @@ var Command = &cli.Command{
 		if err != nil {
 			return fmt.Errorf("while performing PUT request: %w", err)
 		}
+
+		defer res.Body.Close()
 
 		if res.StatusCode != 204 {
 			return fmt.Errorf("unexpected status %s", res.Status)

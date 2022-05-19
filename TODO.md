@@ -11,7 +11,7 @@
 * ~~accelerate tests by creating one 'master' kartusche file and just copy it for each test~~
 * create server and cli to:
     * ~~upload kartusche~~
-    * list kartusches
+    * ~~list kartusches~~
     * delete kartusche
     * get kartusche backup
     * update kartusche's code
