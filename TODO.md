@@ -12,6 +12,11 @@
 * create server and cli to:
     * ~~upload kartusche~~
     * ~~list kartusches~~
+    * get kartusche info
+        * list of handlers
+        * list of static files
+        * request counters per handler and static file
+        * db stats?
     * delete kartusche
     * get kartusche backup
     * update kartusche's code
