@@ -22,6 +22,11 @@ var Command = &cli.Command{
 			Value:   ":3003",
 			EnvVars: []string{"ADDR"},
 		},
+		&cli.StringFlag{
+			Name:    "work-dir",
+			Value:   "work",
+			EnvVars: []string{"WORK_DIR"},
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
@@ -29,7 +34,18 @@ var Command = &cli.Command{
 				err = cli.Exit(fmt.Errorf("while running server: %w", err), 1)
 			}
 		}()
+
+		ks, err := open(c.String("work-dir"))
+		if err != nil {
+			return fmt.Errorf("while starting kartusche server: %w", err)
+		}
+
 		r := mux.NewRouter()
+
+		controllerHost := c.String("controller-hostname")
+
+		r.Host(controllerHost).Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
+
 		s := &http.Server{
 			Handler: r,
 		}

@@ -1,8 +1,6 @@
 package test
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -72,11 +70,6 @@ var Command = &cli.Command{
 
 		programs = append(programs, ps, exp)
 
-		tarBytes, err := tarDirToByteSlice("content")
-		if err != nil {
-			return fmt.Errorf("while tarring content: %w", err)
-		}
-
 		td, err := os.MkdirTemp("", "")
 		if err != nil {
 			return fmt.Errorf("while creating temp file: %w", err)
@@ -112,7 +105,7 @@ var Command = &cli.Command{
 
 		masterKartuscheFile := filepath.Join(td, "kartusche")
 
-		err = runtime.InitializeNew(masterKartuscheFile, "/", tar.NewReader(bytes.NewReader(tarBytes)))
+		err = runtime.InitializeNew(masterKartuscheFile, "content")
 		if err != nil {
 			return fmt.Errorf("while initializing Kartusche: %w", err)
 		}
@@ -259,53 +252,4 @@ var Command = &cli.Command{
 
 		return cli.Exit("", status)
 	},
-}
-
-func tarDirToByteSlice(dir string) ([]byte, error) {
-	bb := new(bytes.Buffer)
-	tw := tar.NewWriter(bb)
-
-	// walk through every file in the folder
-	err := filepath.Walk(dir, func(file string, fi os.FileInfo, err error) error {
-
-		// generate tar header
-		header, err := tar.FileInfoHeader(fi, file)
-		if err != nil {
-			return err
-		}
-
-		// must provide real name
-		// (see https://golang.org/src/archive/tar/common.go?#L626)
-		pathParts := strings.Split(file, string(os.PathSeparator))
-		pathParts[0] = "."
-
-		header.Name = filepath.ToSlash(strings.Join(pathParts, string(os.PathSeparator)))
-
-		// write header
-		if err := tw.WriteHeader(header); err != nil {
-			return err
-		}
-		// if not a dir, write file content
-		if !fi.IsDir() {
-			data, err := os.Open(file)
-			if err != nil {
-				return err
-			}
-			if _, err := io.Copy(tw, data); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("while creating tar: %w", err)
-	}
-
-	err = tw.Close()
-	if err != nil {
-		return nil, fmt.Errorf("while finishing tar: %w", err)
-	}
-
-	return bb.Bytes(), nil
 }
