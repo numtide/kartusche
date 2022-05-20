@@ -53,7 +53,7 @@ func (r *runtime) Shutdown() error {
 	return r.db.Close()
 }
 
-func Open(fileName string, pathPrefix string) (Runtime, error) {
+func Open(fileName string) (Runtime, error) {
 	db, err := embedded.Open(fileName, 0700)
 	if err != nil {
 		return nil, fmt.Errorf("while opening database: %w", err)
@@ -101,9 +101,7 @@ func Open(fileName string, pathPrefix string) (Runtime, error) {
 						return fmt.Errorf("while compiling %s: %w", current.Append(key).String(), err)
 					}
 
-					prefixRoute := r.PathPrefix(pathPrefix)
-
-					prefixRoute.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					r.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						vars := mux.Vars(r)
 						vm := goja.New()
 						vm.SetFieldNameMapper(goja.UncapFieldNameMapper())

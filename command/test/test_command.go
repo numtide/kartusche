@@ -136,7 +136,7 @@ var Command = &cli.Command{
 					panic(fmt.Errorf("while closing kartusche file: %w", err))
 				}
 
-				kartusche, err := runtime.Open(kartuscheFile.Name(), "/")
+				kartusche, err := runtime.Open(kartuscheFile.Name())
 				if err != nil {
 					panic(fmt.Errorf("while opening Kartusche: %w", err))
 				}

@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/draganm/bolted"
-	"github.com/draganm/kartusche/runtime"
 	"github.com/gorilla/mux"
 )
 
@@ -71,23 +70,9 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	rt, err := runtime.Open(kartuscheFilePath, prefix)
-	if err != nil {
-		return
-	}
-
-	defer func() {
-		if err != nil {
-			rt.Shutdown()
-		}
-	}()
-
 	k := &kartusche{
-		Hosts:   hostnames,
-		Prefix:  prefix,
-		runtime: rt,
-		name:    name,
-		path:    kartuscheFilePath,
+		Hosts:  hostnames,
+		Prefix: prefix,
 	}
 
 	kb, err := json.Marshal(k)
@@ -96,7 +81,7 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = bolted.SugaredWrite(s.db, func(tx bolted.SugaredWriteTx) error {
-		newKartuschePath := kartuschePath.Append(name)
+		newKartuschePath := kartuschesPath.Append(name)
 		if tx.Exists(newKartuschePath) {
 			return newErrorWithCode(errors.New("already exists"), 419)
 		}
@@ -108,10 +93,6 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-
-	s.mu.Lock()
-	s.kartusches[name] = k
-	s.mu.Unlock()
 
 	w.WriteHeader(204)
 

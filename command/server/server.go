@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,24 +10,38 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/runtime"
+	"github.com/gorilla/mux"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type kartusche struct {
-	Hosts  []string `json:"host"`
-	Prefix string   `json:"prefix"`
-	name   string
-
+	Hosts   []string `json:"host"`
+	Prefix  string   `json:"prefix"`
+	Error   string   `json:"error,omitempty"`
+	name    string
 	runtime runtime.Runtime
 	path    string
 }
 
 func (k *kartusche) start() error {
-	rt, err := runtime.Open(k.path, k.Prefix)
+	rt, err := runtime.Open(k.path)
 	if err != nil {
+		k.Error = err.Error()
 		return fmt.Errorf("while starting: %w", err)
 	}
 	k.runtime = rt
 	return nil
+}
+
+func (k *kartusche) delete() error {
+	var err error
+	if k.runtime != nil {
+		err = multierr.Append(err, k.runtime.Shutdown())
+	}
+
+	err = multierr.Append(err, os.Remove(k.path))
+	return err
 }
 
 type server struct {
@@ -36,6 +49,9 @@ type server struct {
 	mu            *sync.Mutex
 	kartusches    map[string]*kartusche
 	kartuschesDir string
+
+	router *mux.Router
+	log    *zap.SugaredLogger
 }
 
 func createIfNotExisting(dir string, perm os.FileMode) error {
@@ -53,7 +69,7 @@ func createIfNotExisting(dir string, perm os.FileMode) error {
 	return nil
 }
 
-func open(path string) (*server, error) {
+func open(path string, log *zap.SugaredLogger) (*server, error) {
 	err := createIfNotExisting(path, 0700)
 	if err != nil {
 		return nil, err
@@ -74,13 +90,13 @@ func open(path string) (*server, error) {
 	hasKartuscheMap := false
 
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
-		hasKartuscheMap = tx.Exists(kartuschePath)
+		hasKartuscheMap = tx.Exists(kartuschesPath)
 		return nil
 	})
 
 	if !hasKartuscheMap {
 		err = bolted.SugaredWrite(db, func(tx bolted.SugaredWriteTx) error {
-			tx.CreateMap(kartuschePath)
+			tx.CreateMap(kartuschesPath)
 			return nil
 		})
 		if err != nil {
@@ -93,53 +109,14 @@ func open(path string) (*server, error) {
 		kartusches:    map[string]*kartusche{},
 		kartuschesDir: kartuschesDir,
 		mu:            new(sync.Mutex),
+		router:        mux.NewRouter(),
+		log:           log,
 	}
 
-	err = s.start()
-	if err != nil {
-		return nil, fmt.Errorf("while starting kartusches: %w", err)
-	}
+	go s.runtimeManager()
 
 	return s, nil
 
 }
 
-var kartuschePath = dbpath.ToPath("kartusche")
-
-func (s *server) start() error {
-
-	kartusches := []*kartusche{}
-
-	err := bolted.SugaredRead(s.db, func(tx bolted.SugaredReadTx) error {
-		for it := tx.Iterator(kartuschePath); !it.IsDone(); it.Next() {
-			k := kartusche{}
-			err := json.Unmarshal(it.GetValue(), &k)
-			if err != nil {
-				return err
-			}
-			k.name = it.GetKey()
-			k.path = filepath.Join(s.kartuschesDir, k.name)
-
-			kartusches = append(kartusches, &k)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("while reading kartusche data: %w", err)
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, k := range kartusches {
-		err = k.start()
-		if err != nil {
-			return fmt.Errorf("while starting kartusche %s: %w", k.name, err)
-		}
-		s.kartusches[k.name] = k
-	}
-
-	return nil
-
-}
+var kartuschesPath = dbpath.ToPath("kartusches")
