@@ -39,6 +39,7 @@
 * support for Kartusche audit log
 * support on the js level for uploading content directly into the db
 * support on the js level for fetching content directly from the db
+* add support for prometheus, exporting stats of each Kartusche
 * support for the server to capture kartusche failures
     * current content of Kartusche
     * offending http requests
