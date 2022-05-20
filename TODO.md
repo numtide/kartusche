@@ -17,7 +17,7 @@
         * list of static files
         * request counters per handler and static file
         * db stats?
-    * delete kartusche
+    * ~~delete kartusche~~
     * get kartusche backup
     * update kartusche's code
     * pause kartusche

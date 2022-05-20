@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/draganm/kartusche/command/ls"
+	"github.com/draganm/kartusche/command/rm"
 	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/command/test"
 	"github.com/draganm/kartusche/command/upload"
@@ -19,6 +20,7 @@ func main() {
 			server.Command,
 			upload.Command,
 			ls.Command,
+			rm.Command,
 		},
 	}
 	app.RunAndExitOnError()

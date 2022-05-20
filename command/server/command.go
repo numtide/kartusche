@@ -46,6 +46,7 @@ var Command = &cli.Command{
 
 		r.Host(controllerHost).Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
 		r.Host(controllerHost).Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
+		r.Host(controllerHost).Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
 
 		s := &http.Server{
 			Handler: r,
