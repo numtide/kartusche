@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx, db bolted.Database) error {
+func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx) error {
 	staticPath := dbpath.ToPath("static")
 	if !tx.Exists(staticPath) {
 		return nil
@@ -34,7 +34,7 @@ func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx, db bolted.Databas
 			fullPathWithoutStatic := []string(fullPath)[1:]
 			requestPath := "/" + path.Join(fullPathWithoutStatic...)
 
-			handler, err := staticContentHandler(fullPath, db, requestPath)
+			handler, err := staticContentHandler(fullPath, tx, requestPath)
 			if err != nil {
 				return fmt.Errorf("while creating static handler for %s: %w", requestPath, err)
 			}
@@ -52,27 +52,10 @@ func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx, db bolted.Databas
 
 }
 
-func staticContentHandler(dbPath dbpath.Path, db bolted.Database, name string) (http.HandlerFunc, error) {
+func staticContentHandler(dbPath dbpath.Path, tx bolted.SugaredReadTx, name string) (http.HandlerFunc, error) {
 	t := time.Now()
-	readContent := func() ([]byte, error) {
-		tx, err := db.BeginRead()
-		if err != nil {
-			return nil, fmt.Errorf("while creating tx: %w", err)
-		}
 
-		defer tx.Finish()
-
-		data, err := tx.Get(dbPath)
-		if err != nil {
-			return nil, fmt.Errorf("while reading data: %w", err)
-		}
-		return data, nil
-	}
-
-	d, err := readContent()
-	if err != nil {
-		return nil, err
-	}
+	d := tx.Get(dbPath)
 
 	contentType := http.DetectContentType(d)
 
