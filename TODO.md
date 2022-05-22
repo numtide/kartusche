@@ -10,7 +10,7 @@
 * ~~fix bug when requiring same library from multiple places~~
 * ~~accelerate tests by creating one 'master' kartusche file and just copy it for each test~~
 * create server and cli to:
-    * update kartusche's code
+    * ~~update kartusche's code~~
     * ~~upload kartusche~~
     * ~~list kartusches~~
     * get kartusche info
