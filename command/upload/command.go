@@ -1,7 +1,6 @@
 package upload
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -42,13 +41,19 @@ var Command = &cli.Command{
 			}
 		}()
 
-		if c.Args().First() == "" {
-			return errors.New("file path must be provided")
+		dir := c.Args().First()
+
+		if dir == "" {
+			dir = "."
 		}
 
 		name := c.String("name")
 		if name == "" {
-			return errors.New("name must be set")
+			absPath, err := filepath.Abs(".")
+			if err != nil {
+				return fmt.Errorf("while getting absolute path of the current dir")
+			}
+			name = filepath.Base(absPath)
 		}
 
 		td, err := os.MkdirTemp("", "")
@@ -60,7 +65,7 @@ var Command = &cli.Command{
 
 		kartuscheFileName := filepath.Join(td, "kartusche")
 
-		err = runtime.InitializeNew(kartuscheFileName, c.Args().First())
+		err = runtime.InitializeNew(kartuscheFileName, dir)
 		if err != nil {
 			return fmt.Errorf("while initializing Kartusche: %w", err)
 		}
