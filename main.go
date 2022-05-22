@@ -5,6 +5,7 @@ import (
 	"github.com/draganm/kartusche/command/rm"
 	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/command/test"
+	"github.com/draganm/kartusche/command/update"
 	"github.com/draganm/kartusche/command/upload"
 	"github.com/urfave/cli/v2"
 )
@@ -12,15 +13,13 @@ import (
 func main() {
 
 	app := &cli.App{
-		Action: func(ctx *cli.Context) error {
-			return nil
-		},
 		Commands: []*cli.Command{
 			test.Command,
 			server.Command,
 			upload.Command,
 			ls.Command,
 			rm.Command,
+			update.Command,
 		},
 	}
 	app.RunAndExitOnError()

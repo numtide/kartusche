@@ -42,6 +42,7 @@ func init() {
 type Runtime interface {
 	http.Handler
 	Shutdown() error
+	DB() bolted.Database
 }
 
 type runtime struct {
@@ -51,6 +52,10 @@ type runtime struct {
 
 func (r *runtime) Shutdown() error {
 	return r.db.Close()
+}
+
+func (r *runtime) DB() bolted.Database {
+	return r.db
 }
 
 func Open(fileName string) (Runtime, error) {

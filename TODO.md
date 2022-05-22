@@ -22,6 +22,7 @@
     * get kartusche backup
     * pause kartusche
     * resume kartusche
+* add executing of `update.js` after updating code
 * add closing of http requests from tests
 * add code to close db watches from handlers
 * wrap handlers into functions - support for easy return
