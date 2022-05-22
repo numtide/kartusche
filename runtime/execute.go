@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"sync"
 
 	_ "embed"
 
@@ -34,30 +35,35 @@ func init() {
 	}
 }
 
-// type HandlerMeta struct {
-// 	Method string `json:"method"`
-// 	Path   string `json:"path"`
-// }
-
 type Runtime interface {
 	http.Handler
 	Shutdown() error
-	DB() bolted.Database
+	Update(func(tx bolted.SugaredWriteTx) error) error
 }
 
 type runtime struct {
 	db bolted.Database
-	*mux.Router
+	r  *mux.Router
+	mu *sync.Mutex
+}
+
+func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.mu.Lock()
+	rt := r.r
+	r.mu.Unlock()
+
+	rt.ServeHTTP(w, req)
 }
 
 func (r *runtime) Shutdown() error {
 	return r.db.Close()
 }
 
-func (r *runtime) DB() bolted.Database {
-	return r.db
+func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
+	return bolted.SugaredWrite(r.db, func(tx bolted.SugaredWriteTx) error {
+		return fn(tx)
+	})
 }
-
 func Open(fileName string) (Runtime, error) {
 	db, err := embedded.Open(fileName, 0700)
 	if err != nil {
@@ -244,6 +250,6 @@ func Open(fileName string) (Runtime, error) {
 		return nil, fmt.Errorf("while starting runtime: %w", err)
 	}
 
-	return &runtime{db: db, Router: r}, nil
+	return &runtime{db: db, r: r, mu: new(sync.Mutex)}, nil
 
 }

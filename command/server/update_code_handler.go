@@ -42,7 +42,7 @@ func (s *server) updateCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bolted.SugaredWrite(rt.DB(), func(tx bolted.SugaredWriteTx) error {
+	err = rt.Update(func(tx bolted.SugaredWriteTx) error {
 		// step one: delete everything apart from the data
 		for it := tx.Iterator(dbpath.NilPath); !it.IsDone(); it.Next() {
 			if it.GetKey() != "data" {
