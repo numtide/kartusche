@@ -36,7 +36,7 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 
 	prefix := q.Get("prefix")
 
-	tf, err := os.CreateTemp("", "")
+	tf, err := os.CreateTemp(s.tempDir, "")
 	if err != nil {
 		return
 	}

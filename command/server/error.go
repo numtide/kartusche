@@ -40,6 +40,6 @@ func handleHttpError(w http.ResponseWriter, err error) {
 		return
 	}
 
-	http.Error(w, ec.Error(), 500)
+	http.Error(w, err.Error(), 500)
 
 }

@@ -49,6 +49,7 @@ type server struct {
 	mu            *sync.Mutex
 	kartusches    map[string]*kartusche
 	kartuschesDir string
+	tempDir       string
 
 	router *mux.Router
 	log    *zap.SugaredLogger
@@ -81,6 +82,12 @@ func open(path string, log *zap.SugaredLogger) (*server, error) {
 		return nil, err
 	}
 
+	tempDir := filepath.Join(path, "tmp")
+	err = createIfNotExisting(tempDir, 0700)
+	if err != nil {
+		return nil, err
+	}
+
 	dbPath := filepath.Join(path, "state")
 	db, err := embedded.Open(dbPath, 0700)
 	if err != nil {
@@ -108,6 +115,7 @@ func open(path string, log *zap.SugaredLogger) (*server, error) {
 		db:            db,
 		kartusches:    map[string]*kartusche{},
 		kartuschesDir: kartuschesDir,
+		tempDir:       tempDir,
 		mu:            new(sync.Mutex),
 		router:        mux.NewRouter(),
 		log:           log,
