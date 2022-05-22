@@ -105,7 +105,7 @@ var Command = &cli.Command{
 
 		masterKartuscheFile := filepath.Join(td, "kartusche")
 
-		err = runtime.InitializeNew(masterKartuscheFile, "content")
+		err = runtime.InitializeNew(masterKartuscheFile, ".")
 		if err != nil {
 			return fmt.Errorf("while initializing Kartusche: %w", err)
 		}
