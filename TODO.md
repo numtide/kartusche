@@ -22,6 +22,8 @@
     * get kartusche backup
     * pause kartusche
     * resume kartusche
+* development server cli
+    * watches for changed files and does automatic code update
 * add executing of `update.js` after updating code
 * add closing of http requests from tests
 * add code to close db watches from handlers

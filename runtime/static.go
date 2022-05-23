@@ -28,6 +28,7 @@ func addStaticHandlers(r *mux.Router, tx bolted.SugaredReadTx) error {
 			key := it.GetKey()
 			fullPath := current.Append(key)
 			if tx.IsMap(fullPath) {
+				toDo = append(toDo, fullPath)
 				continue
 			}
 
