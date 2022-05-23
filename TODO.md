@@ -24,6 +24,10 @@
     * resume kartusche
 * development server cli
     * watches for changed files and does automatic code update
+* manifest for Kartusche
+    * redefine where static files are
+    * define how to build static files
+* support for .kartuscheignore
 * add executing of `update.js` after updating code
 * add closing of http requests from tests
 * add code to close db watches from handlers
