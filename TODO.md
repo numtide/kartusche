@@ -14,11 +14,12 @@
     * ~~upload kartusche~~
     * ~~list kartusches~~
     * ~~delete kartusche~~
+* manifest for Kartusche
+    * ~~redefine where static files are~~
+    * fix update code to use the same logic
+    * define how to build static files
 * development server cli
     * watches for changed files and does automatic code update
-* manifest for Kartusche
-    * redefine where static files are
-    * define how to build static files
 * get kartusche backup
 * pause kartusche
 * resume kartusche
