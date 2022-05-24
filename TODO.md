@@ -13,20 +13,20 @@
     * ~~update kartusche's code~~
     * ~~upload kartusche~~
     * ~~list kartusches~~
-    * get kartusche info
-        * list of handlers
-        * list of static files
-        * request counters per handler and static file
-        * db stats?
     * ~~delete kartusche~~
-    * get kartusche backup
-    * pause kartusche
-    * resume kartusche
 * development server cli
     * watches for changed files and does automatic code update
 * manifest for Kartusche
     * redefine where static files are
     * define how to build static files
+* get kartusche backup
+* pause kartusche
+* resume kartusche
+* get kartusche info
+    * list of handlers
+    * list of static files
+    * request counters per handler and static file
+    * db stats?
 * support for .kartuscheignore
 * add executing of `update.js` after updating code
 * add closing of http requests from tests
