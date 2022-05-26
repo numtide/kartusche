@@ -8,6 +8,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/draganm/kartusche/config"
+	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime"
 	"github.com/urfave/cli/v2"
 )
@@ -17,7 +19,6 @@ var Command = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "kartusche-server-base-url",
-			Value:   "http://localhost:3003",
 			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
 		},
 		&cli.StringFlag{
@@ -25,7 +26,6 @@ var Command = &cli.Command{
 		},
 		&cli.StringSliceFlag{
 			Name:    "hostname",
-			Value:   cli.NewStringSlice("localhost"),
 			EnvVars: []string{"HOSTNAMES"},
 		},
 		&cli.StringFlag{
@@ -47,7 +47,17 @@ var Command = &cli.Command{
 			dir = "."
 		}
 
+		km, err := manifest.Load(dir)
+		if err != nil {
+			return fmt.Errorf("while loading manifest")
+		}
+
 		name := c.String("name")
+
+		if name == "" {
+			name = km.Name
+		}
+
 		if name == "" {
 			absPath, err := filepath.Abs(".")
 			if err != nil {
@@ -70,16 +80,36 @@ var Command = &cli.Command{
 			return fmt.Errorf("while initializing Kartusche: %w", err)
 		}
 
-		baseUrl, err := url.Parse(c.String("kartusche-server-base-url"))
+		cfg, err := config.Current()
+		if err != nil {
+			return fmt.Errorf("while getting current config: %w", err)
+		}
+
+		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
+
+		baseUrl, err := url.Parse(serverBaseURL)
 		if err != nil {
 			return fmt.Errorf("while parsing server base url: %w", err)
 		}
 
 		baseUrl.Path = path.Join(baseUrl.Path, "kartusches", name)
 
+		hostnames := km.Hostnames
+
+		if c.IsSet("hostname") {
+			hostnames = c.StringSlice("hostname")
+		}
+
 		q := url.Values{}
-		q["hostname"] = c.StringSlice("hostname")
-		q.Set("prefix", c.String("prefix"))
+		q["hostname"] = hostnames
+
+		prefix := c.String("prefix")
+
+		if prefix == "" {
+			prefix = km.Prefix
+		}
+
+		q.Set("prefix", prefix)
 
 		baseUrl.RawQuery = q.Encode()
 

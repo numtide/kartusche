@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/draganm/kartusche/config"
 	"github.com/urfave/cli/v2"
 )
 
@@ -48,7 +49,14 @@ var Command = &cli.Command{
 			name = filepath.Base(absPath)
 		}
 
-		baseUrl, err := url.Parse(c.String("kartusche-server-base-url"))
+		cfg, err := config.Current()
+		if err != nil {
+			return fmt.Errorf("while getting current config: %w", err)
+		}
+
+		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
+
+		baseUrl, err := url.Parse(serverBaseURL)
 		if err != nil {
 			return fmt.Errorf("while parsing server base url: %w", err)
 		}

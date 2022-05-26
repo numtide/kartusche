@@ -20,9 +20,11 @@ type Static struct {
 // }
 
 type KartuscheManifest struct {
-	Name   string  `yaml:"name"`
-	Static *Static `yaml:"static"`
-	dir    string
+	Name      string   `yaml:"name"`
+	Hostnames []string `yaml:"host_names"`
+	Prefix    string   `yaml:"prefix"`
+	Static    *Static  `yaml:"static"`
+	dir       string
 }
 
 func (k *KartuscheManifest) StaticDir() (string, error) {

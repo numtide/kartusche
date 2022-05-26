@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/draganm/kartusche/command/server"
+	"github.com/draganm/kartusche/config"
 	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli/v2"
 )
@@ -31,7 +32,14 @@ var Command = &cli.Command{
 			}
 		}()
 
-		baseUrl, err := url.Parse(c.String("kartusche-server-base-url"))
+		cfg, err := config.Current()
+		if err != nil {
+			return fmt.Errorf("while getting current config: %w", err)
+		}
+
+		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
+
+		baseUrl, err := url.Parse(serverBaseURL)
 		if err != nil {
 			return fmt.Errorf("while parsing server base url: %w", err)
 		}
