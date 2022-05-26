@@ -16,11 +16,12 @@
     * ~~delete kartusche~~
 * manifest for Kartusche
     * ~~redefine where static files are~~
-    * fix update code to use the same logic
+    * ~~fix update code to use the same logic~~
     * define how to build static files
 * development server cli
     * watches for changed files and does automatic code update
 * get kartusche backup
+* initialize kartusche config
 * pause kartusche
 * resume kartusche
 * get kartusche info
