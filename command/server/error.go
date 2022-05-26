@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type errorWithCode struct {
@@ -28,10 +30,12 @@ func (e *errorWithCode) As(err any) bool {
 	return ok
 }
 
-func handleHttpError(w http.ResponseWriter, err error) {
+func handleHttpError(w http.ResponseWriter, err error, log *zap.SugaredLogger) {
 	if err == nil {
 		return
 	}
+
+	log.With("error", err).Error("while handling http request")
 
 	ec := &errorWithCode{}
 

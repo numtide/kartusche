@@ -96,8 +96,18 @@ var Command = &cli.Command{
 		}
 
 		for p, pth := range pathsToLoad {
+
 			if !filepath.IsAbs(pth) {
 				pth = filepath.Join(dir, pth)
+			}
+
+			_, err = os.Stat(pth)
+			if os.IsNotExist(err) {
+				continue
+			}
+
+			if err != nil {
+				return err
 			}
 
 			absDir, err := filepath.Abs(pth)
@@ -109,6 +119,10 @@ var Command = &cli.Command{
 			absDirParts := strings.Split(absDir, string(os.PathSeparator))
 
 			err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
+
+				if err != nil {
+					return err
+				}
 
 				// generate tar header
 				header, err := tar.FileInfoHeader(fi, file)

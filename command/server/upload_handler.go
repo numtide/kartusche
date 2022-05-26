@@ -16,7 +16,7 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {
-		handleHttpError(w, err)
+		handleHttpError(w, err, s.log)
 	}()
 
 	vars := mux.Vars(r)

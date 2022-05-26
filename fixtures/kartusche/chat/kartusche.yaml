@@ -1,4 +1,6 @@
 name: chat
 static:
   dir: ui/public
+host_names:
+  - localhost:3002
 
