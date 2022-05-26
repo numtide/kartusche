@@ -9,15 +9,15 @@
 * ~~add support for `init.js` file~~
 * ~~fix bug when requiring same library from multiple places~~
 * ~~accelerate tests by creating one 'master' kartusche file and just copy it for each test~~
-* create server and cli to:
+* ~~create server and cli to:~~
     * ~~update kartusche's code~~
     * ~~upload kartusche~~
     * ~~list kartusches~~
     * ~~delete kartusche~~
-* manifest for Kartusche
+* ~~manifest for Kartusche~~
     * ~~redefine where static files are~~
     * ~~fix update code to use the same logic~~
-    * define how to build static files
+    * define how to build static files (wonder if worth the trouble!)
 * development server cli
     * watches for changed files and does automatic code update
 * get kartusche backup
