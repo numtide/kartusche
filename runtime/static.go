@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
+	"mime"
 	"net/http"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/draganm/bolted"
@@ -58,7 +60,14 @@ func staticContentHandler(dbPath dbpath.Path, tx bolted.SugaredReadTx, name stri
 
 	d := tx.Get(dbPath)
 
-	contentType := http.DetectContentType(d)
+	var contentType string
+
+	ext := filepath.Ext(dbPath.String())
+	if ext == "" {
+		contentType = http.DetectContentType(d)
+	} else {
+		contentType = mime.TypeByExtension(ext)
+	}
 
 	sum := sha1.Sum(d)
 	etag := fmt.Sprintf(`"%x"`, sum[:])
