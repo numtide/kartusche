@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/draganm/kartusche/config"
+	"github.com/draganm/kartusche/manifest"
 	"github.com/urfave/cli/v2"
 )
 
@@ -37,6 +38,11 @@ var Command = &cli.Command{
 
 		if dir == "" {
 			dir = "."
+		}
+
+		m, err := manifest.Load(dir)
+		if err != nil {
+			return fmt.Errorf("while loading manifest: %w", err)
 		}
 
 		name := c.String("name")
@@ -74,56 +80,75 @@ var Command = &cli.Command{
 		defer tf.Close()
 		defer os.Remove(tf.Name())
 
-		absDir, err := filepath.Abs(dir)
-
-		if err != nil {
-			return fmt.Errorf("while getting absolute dir of %s: %w", dir, err)
-		}
-
-		absDirParts := strings.Split(absDir, string(os.PathSeparator))
-
 		tw := tar.NewWriter(tf)
 
-		err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
-
-			// generate tar header
-			header, err := tar.FileInfoHeader(fi, file)
-			if err != nil {
-				return err
-			}
-
-			// must provide real name
-			// (see https://golang.org/src/archive/tar/common.go?#L626)
-			absPath, err := filepath.Abs(file)
-			if err != nil {
-				return fmt.Errorf("while getting absolute path of %s: %w", file, err)
-			}
-			pathParts := strings.Split(absPath, string(os.PathSeparator))
-			pathParts = pathParts[len(absDirParts):]
-
-			header.Name = filepath.ToSlash(strings.Join(pathParts, string(os.PathSeparator)))
-
-			// write header
-			if err := tw.WriteHeader(header); err != nil {
-				return err
-			}
-
-			if fi.Mode().IsRegular() {
-				data, err := os.Open(file)
-				if err != nil {
-					return err
-				}
-				_, err = io.Copy(tw, data)
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
-		})
-
+		static, err := m.StaticDir()
 		if err != nil {
-			return err
+			return fmt.Errorf("while determining static dir: %w", err)
+		}
+
+		pathsToLoad := map[string]string{
+			"static":  static,
+			"handler": "handler",
+			"lib":     "lib",
+			"tests":   "tests",
+			"init.js": "init.js",
+		}
+
+		for p, pth := range pathsToLoad {
+			if !filepath.IsAbs(pth) {
+				pth = filepath.Join(dir, pth)
+			}
+
+			absDir, err := filepath.Abs(pth)
+
+			if err != nil {
+				return fmt.Errorf("while getting absolute dir of %s: %w", dir, err)
+			}
+
+			absDirParts := strings.Split(absDir, string(os.PathSeparator))
+
+			err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
+
+				// generate tar header
+				header, err := tar.FileInfoHeader(fi, file)
+				if err != nil {
+					return err
+				}
+
+				// must provide real name
+				// (see https://golang.org/src/archive/tar/common.go?#L626)
+				absPath, err := filepath.Abs(file)
+				if err != nil {
+					return fmt.Errorf("while getting absolute path of %s: %w", file, err)
+				}
+				pathParts := strings.Split(absPath, string(os.PathSeparator))
+				pathParts = append([]string{p}, pathParts[len(absDirParts):]...)
+
+				header.Name = filepath.ToSlash(strings.Join(pathParts, string(os.PathSeparator)))
+
+				// write header
+				if err := tw.WriteHeader(header); err != nil {
+					return err
+				}
+
+				if fi.Mode().IsRegular() {
+					data, err := os.Open(file)
+					if err != nil {
+						return err
+					}
+					_, err = io.Copy(tw, data)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
 		}
 
 		_, err = tf.Seek(0, 0)

@@ -48,14 +48,6 @@ func InitializeNew(fileName, dir string) (err error) {
 		return fmt.Errorf("while determining static dir: %w", err)
 	}
 
-	// pathsToLoad := []string{
-	// 	static,
-	// 	"handler",
-	// 	"lib",
-	// 	"tests",
-	// 	"init.js",
-	// }
-
 	pathsToLoad := map[string]string{
 		"static":  static,
 		"handler": "handler",
