@@ -20,7 +20,6 @@ var Command = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "kartusche-server-base-url",
-			Value:   "http://localhost:3003",
 			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
 		},
 		&cli.StringFlag{
