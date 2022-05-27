@@ -19,7 +19,8 @@
     * ~~fix update code to use the same logic~~
     * define how to build static files (wonder if worth the trouble!)
 * development server cli
-    * watches for changed files and does automatic code update
+    * ~~watches for changed files and does automatic code update~~
+    * run tests after the code or test update
 * get kartusche backup
 * initialize kartusche config
 * pause kartusche
