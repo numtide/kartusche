@@ -13,6 +13,7 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime"
+	"github.com/draganm/kartusche/tests"
 	"github.com/fsnotify/fsnotify"
 	"github.com/urfave/cli/v2"
 )
@@ -93,6 +94,10 @@ var Command = &cli.Command{
 					continue
 				}
 				fmt.Println("updated runtime")
+				err = tests.Run(dir)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}()
 
