@@ -75,6 +75,7 @@ var Command = &cli.Command{
 
 		go func() {
 			names := make(chan string, 20)
+			names <- "."
 			done := make(chan error)
 			go watch(dir, w, names, done)
 			for range names {
