@@ -21,6 +21,7 @@
 * ~~development server cli~~
     * ~~watches for changed files and does automatic code update~~
     * ~~run tests after the code or test update~~
+* add CLI to initialize a new Kartusche
 * add support for HTTP requests from Kartusche
 * get kartusche backup
 * initialize kartusche config
