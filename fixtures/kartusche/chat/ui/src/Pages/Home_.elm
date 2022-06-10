@@ -2,6 +2,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Home_ exposing (Params)
 import Html exposing (..)
+import Html.Attributes exposing (class)
 import Http exposing (Error)
 import Json.Decode exposing (list, string)
 import Page
@@ -76,13 +77,15 @@ view : Model -> View Msg
 view model =
     { title = "welcome to the chat"
     , body =
-        [ ul
-            []
-            (List.map
-                (\chat ->
-                    li [] [ text chat ]
+        [ div [ class "container", class "mx-auto" ]
+            [ ul
+                [ class "list-disc" ]
+                (List.map
+                    (\chat ->
+                        li [] [ text chat ]
+                    )
+                    model.chats
                 )
-                model.chats
-            )
+            ]
         ]
     }
