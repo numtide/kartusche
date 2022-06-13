@@ -16,6 +16,7 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
+	"github.com/draganm/kartusche/runtime/httprequest"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
@@ -132,6 +133,7 @@ func initializeRouter(tx bolted.SugaredReadTx, dbw *dbwrapper.DB) (*mux.Router, 
 					vm.Set("println", fmt.Println)
 					vm.Set("read", dbw.Read)
 					vm.Set("write", dbw.Write)
+					vm.Set("http_do", httprequest.Request)
 					vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
 						os, _ := dbw.Watch(path, fn)
 						return os

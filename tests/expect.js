@@ -11,5 +11,11 @@ expect = {
         if (currentJson !== expectedJson) {
             throw new Error(`expected ${currentJson} to equal to ${expectedJson}`)
         }
+    },
+
+    matches: (current, pattern) => {
+        if (!pattern.test(current)) {
+            throw new Error(`expected ${current} to match ${pattern.toString()}`)
+        }
     }
 }
