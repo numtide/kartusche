@@ -43,9 +43,6 @@
 * come up with a concept of cronjobs
     * regular crons - maybe static
     * programmatic
-* come up with a concept for performing HTTP requests from Kartusche
-    * async ?
-    * sync ?
 * support for logging
 * support for Kartusche audit log
 * support on the js level for uploading content directly into the db
