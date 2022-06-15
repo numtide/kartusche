@@ -13,5 +13,6 @@ pkgs.mkShell {
     pkgs.gocode-gomod
     pkgs.godef
     pkgs.golint
+    pkgs.gh
   ];
 }
