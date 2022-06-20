@@ -119,11 +119,12 @@ func updateRuntimeCode(rt runtime.Runtime, dir string) error {
 	}
 
 	pathsToLoad := map[string]string{
-		"static":  static,
-		"handler": "handler",
-		"lib":     "lib",
-		"tests":   "tests",
-		"init.js": "init.js",
+		"static":    static,
+		"handler":   "handler",
+		"lib":       "lib",
+		"tests":     "tests",
+		"templates": "templates",
+		"init.js":   "init.js",
 	}
 
 	return rt.Update(func(tx bolted.SugaredWriteTx) error {

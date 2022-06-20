@@ -88,11 +88,12 @@ var Command = &cli.Command{
 		}
 
 		pathsToLoad := map[string]string{
-			"static":  static,
-			"handler": "handler",
-			"lib":     "lib",
-			"tests":   "tests",
-			"init.js": "init.js",
+			"static":    static,
+			"handler":   "handler",
+			"lib":       "lib",
+			"tests":     "tests",
+			"templates": "templates",
+			"init.js":   "init.js",
 		}
 
 		for p, pth := range pathsToLoad {

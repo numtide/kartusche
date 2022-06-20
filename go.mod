@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	github.com/cbroglie/mustache v1.3.1 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect

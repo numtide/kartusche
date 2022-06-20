@@ -18,6 +18,7 @@ import (
 	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/draganm/kartusche/runtime/httprequest"
 	"github.com/draganm/kartusche/runtime/jslib"
+	"github.com/draganm/kartusche/runtime/template"
 	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -67,7 +68,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 		if err != nil {
 			return err
 		}
-		rt, err = initializeRouter(tx, dbwrapper.New(r.db))
+		rt, err = initializeRouter(tx, r.db)
 		return err
 	})
 
@@ -81,7 +82,8 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	return nil
 }
 
-func initializeRouter(tx bolted.SugaredReadTx, dbw *dbwrapper.DB) (*mux.Router, error) {
+func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router, error) {
+	dbw := dbwrapper.New(db)
 	r := mux.NewRouter()
 
 	jslib, err := jslib.Load(tx)
@@ -134,6 +136,7 @@ func initializeRouter(tx bolted.SugaredReadTx, dbw *dbwrapper.DB) (*mux.Router, 
 					vm.Set("read", dbw.Read)
 					vm.Set("write", dbw.Write)
 					vm.Set("http_do", httprequest.Request)
+					vm.Set("render_template", template.RenderTemplate(db, w))
 					vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
 						os, _ := dbw.Watch(path, fn)
 						return os
@@ -266,7 +269,7 @@ func Open(fileName string) (Runtime, error) {
 	var r *mux.Router
 
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
-		r, err = initializeRouter(tx, dbwrapper.New(db))
+		r, err = initializeRouter(tx, db)
 		return err
 	})
 
