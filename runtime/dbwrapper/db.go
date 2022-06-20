@@ -176,7 +176,7 @@ func (o *observeSelectable) Fn() func(interface{}) (bool, error) {
 }
 
 func (db *DB) Watch(matcher []string, fn func(interface{}) (bool, error)) (*observeSelectable, func()) {
-	ch, cancel := db.db.Observe(dataPath.Append(matcher...).ToMatcher())
+	ch, cancel := db.db.Observe(dataPath.Append(matcher...).ToMatcher().AppendAnySubpathMatcher())
 	return &observeSelectable{ch: ch, fn: fn}, cancel
 
 }

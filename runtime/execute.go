@@ -137,6 +137,7 @@ func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router,
 					vm.Set("write", dbw.Write)
 					vm.Set("http_do", httprequest.Request)
 					vm.Set("render_template", template.RenderTemplate(db, w))
+					vm.Set("render_template_to_s", template.RenderTemplateToString(db))
 					vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
 						os, _ := dbw.Watch(path, fn)
 						return os
@@ -225,8 +226,12 @@ func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router,
 
 						}()
 
-						vm.Set("wsSend", func(msg interface{}) error {
+						vm.Set("wsSendJson", func(msg interface{}) error {
 							return conn.WriteJSON(msg)
+						})
+
+						vm.Set("wsSendHtml", func(msg string) error {
+							return conn.WriteMessage(websocket.TextMessage, []byte(msg))
 						})
 
 						return &defaultSelectable{ch: ch, fn: handler}, nil

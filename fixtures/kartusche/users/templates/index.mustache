@@ -6,13 +6,21 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <script src="https://unpkg.com/htmx.org@1.7.0"></script>
     <script src="https://unpkg.com/htmx.org@1.7.0/dist/ext/json-enc.js"></script>
-    
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <title>Hello world</title>
 </head>
 
 <body>
     <h1>Hello world</h1>
-    <button hx-get="/create-user-form" hx-swap="outerHTML">Create new user</button>
+    <h2>users</h2>
+    <div hx-ws="connect:/users/ws">
+        <ul id="users">
+            list of users here
+        </ul>
+
+    </div>
+    <button hx-get="/create-user-form" hx-swap="outerHTML" class="border-2 bg-gray-500">Create new user</button>
 </body>
 
 </html>
