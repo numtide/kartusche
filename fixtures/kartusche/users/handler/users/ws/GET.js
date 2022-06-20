@@ -4,7 +4,8 @@ select(
         const users = read(tx => {
             const users = []
             for (const it = tx.iterator(["users"]); !it.isDone(); it.next()) {
-                users.push(it.getKey())
+                const user = JSON.parse(it.getValue())
+                users.push(user.email)
             }
             return users
         })
