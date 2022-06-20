@@ -186,8 +186,9 @@ func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router,
 							if !ok {
 								// TODO - return something else?
 								return nil
+
 							}
-							done, err := selectables[chosen].Fn()(val)
+							done, err := selectables[chosen].Fn()(val.Interface())
 							if err != nil {
 								continue
 							}

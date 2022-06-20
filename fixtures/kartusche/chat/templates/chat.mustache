@@ -1,0 +1,12 @@
+chat with {{username}}
+
+<div hx-ws="connect:/chat?username={{username}}">
+    <div id="chat-lines">
+        chat lines here
+    </div>
+    <hr>
+    <form hx-ws="send:submit">
+        <input type="textarea" name="message">
+        <button>Send</button>
+    </form>
+</div>

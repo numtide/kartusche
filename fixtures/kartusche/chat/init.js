@@ -1,4 +1,3 @@
-if (!tx.exists(["chats"])) {
-    tx.createMap(["chats"])
-    tx.createMap(["chats","support"])
+if (!tx.exists(["chat"])) {
+    tx.createMap(["chat"])
 }
