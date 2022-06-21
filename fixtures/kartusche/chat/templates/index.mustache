@@ -13,7 +13,7 @@
 
 <body>
     <h1 class="text-xl font-bold">Welcome to Kartusche chat</h1>
-    <form hx-get="/join-chat">
+    <form hx-post="/join-chat" hx-ext='json-enc'>
         <label for="username">What is your name?</label><br>
         <input type="text" id="username" class="border-2" name="username"><br>
         <button>Start chatting</button>

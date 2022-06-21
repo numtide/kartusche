@@ -3,8 +3,9 @@ module github.com/draganm/kartusche
 go 1.18
 
 require (
+	github.com/cbroglie/mustache v1.3.1
 	github.com/dop251/goja v0.0.0-20220430115111-e1f9dc0755e7
-	github.com/draganm/bolted v0.8.1
+	github.com/draganm/bolted v0.8.2
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	github.com/cbroglie/mustache v1.3.1 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect

@@ -14,5 +14,7 @@ pkgs.mkShell {
     pkgs.godef
     pkgs.golint
     pkgs.gh
+    pkgs.delve
+    pkgs.go-tools
   ];
 }

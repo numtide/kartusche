@@ -8,18 +8,17 @@ write(tx => {
         }
         const k = it.getKey()
         tx.delete(["chat",k])
+        println(`deleted ${k}`)
     }
     tx.put(["chat", uuidv7()], `${username} has joined`)
 })
 
-const sel = upgradeToWebsocket(({ message }) => {
-    write(tx => {
-        tx.put(["chat", uuidv7()], `${username}: ${message}`)
-    })
-})
-
 select(
-    sel,
+    upgradeToWebsocket(({ message }) => {
+        write(tx => {
+            tx.put(["chat", uuidv7()], `${username}: ${message}`)
+        })
+    }),
     watch(["chat"], () => {
         const lines = read(tx => {
             const lines = []

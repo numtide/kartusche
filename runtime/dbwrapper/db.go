@@ -16,7 +16,7 @@ func New(db bolted.Database) *DB {
 	return &DB{db: db}
 }
 
-func (db *DB) Read(f func(*readTxWrapper) (interface{}, error)) (interface{}, error) {
+func (db *DB) Read(f func(*readTxWrapper) (interface{}, error)) (res interface{}, err error) {
 	tx, err := db.db.BeginRead()
 	if err != nil {
 		return nil, fmt.Errorf("while beginning read tx: %w", err)
@@ -124,7 +124,7 @@ func (i *iteratorWrapper) GetValue() (string, error) {
 	return string(d), nil
 }
 
-func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (interface{}, error) {
+func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (res interface{}, err error) {
 	tx, err := db.db.BeginWrite()
 	if err != nil {
 		return nil, fmt.Errorf("while beginning write tx: %w", err)
