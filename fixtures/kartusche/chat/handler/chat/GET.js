@@ -1,15 +1,6 @@
 const username = r.uRL.query().get("username")
 
 write(tx => {
-    while(tx.size(["chat"]) > 10) {
-        const it= tx.iterator(["chat"])
-        if (it.isDone()) {
-            break
-        }
-        const k = it.getKey()
-        tx.delete(["chat",k])
-        println(`deleted ${k}`)
-    }
     tx.put(["chat", uuidv7()], `${username} has joined`)
 })
 
