@@ -64,6 +64,8 @@ var Command = &cli.Command{
 		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
 		r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
 		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
+		r.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
+		r.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
 
 		s := &http.Server{
 			Handler: r,

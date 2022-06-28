@@ -63,16 +63,34 @@ func open(path string, log *zap.SugaredLogger) (*server, error) {
 		return nil, fmt.Errorf("while opening state db: %w", err)
 	}
 
-	hasKartuscheMap := false
+	initialPaths := []dbpath.Path{
+		kartuschesPath,
+		authPath,
+		openTokenRequests,
+		tokensPath,
+		usersPath,
+	}
+
+	pathsToCreate := []dbpath.Path{}
 
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
-		hasKartuscheMap = tx.Exists(kartuschesPath)
+		for _, p := range initialPaths {
+			if !tx.Exists(p) {
+				pathsToCreate = append(pathsToCreate, p)
+			}
+		}
 		return nil
 	})
 
-	if !hasKartuscheMap {
+	if err != nil {
+		return nil, fmt.Errorf("while checking if initial path exists: %w", err)
+	}
+
+	if len(pathsToCreate) != 0 {
 		err = bolted.SugaredWrite(db, func(tx bolted.SugaredWriteTx) error {
-			tx.CreateMap(kartuschesPath)
+			for _, p := range pathsToCreate {
+				tx.CreateMap(p)
+			}
 			return nil
 		})
 		if err != nil {
@@ -97,3 +115,7 @@ func open(path string, log *zap.SugaredLogger) (*server, error) {
 }
 
 var kartuschesPath = dbpath.ToPath("kartusches")
+var authPath = dbpath.ToPath("auth")
+var openTokenRequests = authPath.Append("open_token_requests")
+var tokensPath = authPath.Append("tokens")
+var usersPath = authPath.Append("users")
