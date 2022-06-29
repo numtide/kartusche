@@ -12,16 +12,12 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// type openRequest struct {
-// 	From string `json:"from"`
-// }
-
 type authTokenInfo struct {
 	CreatedAt time.Time `json:"created_at"`
 	UserID    string    `json:"user_id"`
 }
 
-type loginStartResponse struct {
+type LoginStartResponse struct {
 	TokenRequestID  string `json:"token_request_id"`
 	VerificationURI string `json:"verification_uri"`
 }
@@ -56,24 +52,34 @@ func (s *server) loginStart(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	scheme := r.Header.Get("X-Forwarded-Proto")
+
+	if scheme == "" {
+		if r.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+
 	verificationURL := &url.URL{
-		Scheme: r.URL.Scheme,
+		Scheme: scheme,
 		Host:   r.Host,
 		Path:   "/auth/verify",
 	}
 
-	json.NewEncoder(w).Encode(loginStartResponse{
+	json.NewEncoder(w).Encode(LoginStartResponse{
 		TokenRequestID:  requestID.String(),
 		VerificationURI: verificationURL.String(),
 	})
 
 }
 
-type requestTokenParameters struct {
+type RequestTokenParameters struct {
 	TokenRequestID string `json:"token_request_id"`
 }
 
-type accessTokenResponse struct {
+type AccessTokenResponse struct {
 	AccessToken string `json:"access_token,omitempty"`
 	Error       string `json:"error,omitempty"`
 }
@@ -85,14 +91,14 @@ func (s *server) accessToken(w http.ResponseWriter, r *http.Request) {
 		handleHttpError(w, err, s.log)
 	}()
 
-	rp := &requestTokenParameters{}
+	rp := &RequestTokenParameters{}
 	err = json.NewDecoder(r.Body).Decode(rp)
 	if err != nil {
 		err = newErrorWithCode(fmt.Errorf("while decoding request: %w", err), 400)
 		return
 	}
 
-	resp := &accessTokenResponse{}
+	resp := &AccessTokenResponse{}
 
 	err = bolted.SugaredRead(s.db, func(tx bolted.SugaredReadTx) error {
 		requestPath := openTokenRequests.Append(rp.TokenRequestID)
