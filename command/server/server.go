@@ -9,6 +9,7 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/command/server/verifier"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
@@ -20,8 +21,9 @@ type server struct {
 	kartuschesDir string
 	tempDir       string
 
-	router *mux.Router
-	log    *zap.SugaredLogger
+	router   *mux.Router
+	log      *zap.SugaredLogger
+	verifier verifier.AuthenticationProvider
 }
 
 func createIfNotExisting(dir string, perm os.FileMode) error {
@@ -39,7 +41,7 @@ func createIfNotExisting(dir string, perm os.FileMode) error {
 	return nil
 }
 
-func open(path string, log *zap.SugaredLogger) (*server, error) {
+func open(path string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*server, error) {
 	err := createIfNotExisting(path, 0700)
 	if err != nil {
 		return nil, err
@@ -106,6 +108,7 @@ func open(path string, log *zap.SugaredLogger) (*server, error) {
 		mu:            new(sync.Mutex),
 		router:        mux.NewRouter(),
 		log:           log,
+		verifier:      verifier,
 	}
 
 	go s.runtimeManager()

@@ -34,19 +34,9 @@ func (s *server) loginStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, err := uuid.NewV4()
-	if err != nil {
-		return
-	}
-
 	err = bolted.SugaredWrite(s.db, func(tx bolted.SugaredWriteTx) error {
 		requestPath := openTokenRequests.Append(requestID.String())
 		tx.CreateMap(requestPath)
-		tx.Put(requestPath.Append("token"), []byte(tokenID.String()))
-		tx.Put(tokensPath.Append(tokenID.String()), toJSON(authTokenInfo{
-			CreatedAt: time.Now(),
-			UserID:    "no-auth",
-		}))
 		return nil
 	})
 

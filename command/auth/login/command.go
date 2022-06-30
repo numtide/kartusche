@@ -8,6 +8,7 @@ import (
 	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
+	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 )
 
@@ -44,6 +45,8 @@ var Command = &cli.Command{
 		ur.RawQuery = q.Encode()
 
 		fmt.Printf("Please complete authentication flow by visiting %s\n", ur.String())
+
+		go browser.OpenURL(ur.String())
 
 		for {
 

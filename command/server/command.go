@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/draganm/kartusche/command/server/verifier"
 	"github.com/gorilla/mux"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
@@ -30,6 +31,11 @@ var Command = &cli.Command{
 			Value:   "work",
 			EnvVars: []string{"WORK_DIR"},
 		},
+		&cli.StringFlag{
+			Name:    "auth-provider",
+			Value:   "mock",
+			EnvVars: []string{"AUTH_PROVIDER"},
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
@@ -53,7 +59,11 @@ var Command = &cli.Command{
 		defer logger.Sync()
 		log := logger.Sugar()
 
-		ks, err := open(c.String("work-dir"), log)
+		ks, err := open(
+			c.String("work-dir"),
+			verifier.NewMockProvider(),
+			log,
+		)
 		if err != nil {
 			return fmt.Errorf("while starting kartusche server: %w", err)
 		}
@@ -66,6 +76,8 @@ var Command = &cli.Command{
 		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
 		r.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
 		r.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
+		r.Methods("GET").Path("/auth/verify").HandlerFunc(ks.authVerify)
+		r.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(ks.authOauth2Callback)
 
 		s := &http.Server{
 			Handler: r,
