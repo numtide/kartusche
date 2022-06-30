@@ -96,6 +96,13 @@ func (s *server) accessToken(w http.ResponseWriter, r *http.Request) {
 			return newErrorWithCode(errors.New("request not found"), 404)
 		}
 
+		errorPath := requestPath.Append("error")
+
+		if tx.Exists(errorPath) {
+			resp.Error = string(tx.Get(errorPath))
+			return nil
+		}
+
 		tokenPath := requestPath.Append("token")
 
 		if !tx.Exists(tokenPath) {

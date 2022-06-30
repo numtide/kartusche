@@ -21,6 +21,14 @@ func (s *server) authOauth2Callback(w http.ResponseWriter, r *http.Request) {
 
 	res, err := s.verifier.Callback(w, r)
 	if err != nil {
+		if res == nil {
+			return
+		}
+		bolted.SugaredWrite(s.db, func(tx bolted.SugaredWriteTx) error {
+			requestPath := openTokenRequests.Append(res.Code)
+			tx.Put(requestPath.Append("error"), []byte(err.Error()))
+			return nil
+		})
 		return
 	}
 

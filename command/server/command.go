@@ -36,6 +36,18 @@ var Command = &cli.Command{
 			Value:   "mock",
 			EnvVars: []string{"AUTH_PROVIDER"},
 		},
+		&cli.StringFlag{
+			Name:    "oauth2-github-client-id",
+			EnvVars: []string{"OAUTH2_GITHUB_CLIENT_ID"},
+		},
+		&cli.StringFlag{
+			Name:    "oauth2-github-client-secret",
+			EnvVars: []string{"OAUTH2_GITHUB_CLIENT_SECRET"},
+		},
+		&cli.StringFlag{
+			Name:    "oauth2-github-organization",
+			EnvVars: []string{"OAUTH2_GITHUB_ORGANIZATION"},
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
@@ -59,9 +71,27 @@ var Command = &cli.Command{
 		defer logger.Sync()
 		log := logger.Sugar()
 
+		vf := verifier.NewMockProvider()
+
+		if c.String("auth-provider") == "github" {
+			switch {
+			case !c.IsSet("oauth2-github-client-id"):
+				return fmt.Errorf("OAUTH2_GITHUB_CLIENT_ID must be set")
+			case !c.IsSet("oauth2-github-client-secret"):
+				return fmt.Errorf("OAUTH2_GITHUB_CLIENT_SECRET must be set")
+			case !c.IsSet("oauth2-github-organization"):
+				return fmt.Errorf("OAUTH2_GITHUB_ORGANIZATION")
+			}
+			vf = verifier.NewGithubProvider(
+				c.String("oauth2-github-client-id"),
+				c.String("oauth2-github-client-secret"),
+				c.String("oauth2-github-organization"),
+			)
+		}
+
 		ks, err := open(
 			c.String("work-dir"),
-			verifier.NewMockProvider(),
+			vf,
 			log,
 		)
 		if err != nil {

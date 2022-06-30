@@ -72,6 +72,10 @@ var Command = &cli.Command{
 				continue
 			}
 
+			if tr.Error != "" {
+				return fmt.Errorf("auth error: %s", tr.Error)
+			}
+
 			fmt.Println("auth successful")
 
 			err = auth.StoreTokenForServer(serverURL, tr.AccessToken)
