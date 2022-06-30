@@ -1,4 +1,6 @@
 name: chat
 host_names:
   - chat.netice9.xyz
+  - chat.127.0.0.1.nip.io
+
 

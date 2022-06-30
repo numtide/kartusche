@@ -3,10 +3,9 @@ package rm
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"path"
 
+	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/config"
 	"github.com/urfave/cli/v2"
 )
@@ -39,27 +38,9 @@ var Command = &cli.Command{
 
 		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
 
-		baseUrl, err := url.Parse(serverBaseURL)
+		err = client.CallAPI(serverBaseURL, "DELETE", path.Join("kartusches", name), nil, nil, nil, 204)
 		if err != nil {
-			return fmt.Errorf("while parsing server base url: %w", err)
-		}
-
-		baseUrl.Path = path.Join(baseUrl.Path, "kartusches", name)
-
-		req, err := http.NewRequest("DELETE", baseUrl.String(), nil)
-		if err != nil {
-			return fmt.Errorf("while creating request: %w", err)
-		}
-
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("while performing DELETE request: %w", err)
-		}
-
-		defer res.Body.Close()
-
-		if res.StatusCode != 204 {
-			return fmt.Errorf("unexpected status %s", res.Status)
+			return err
 		}
 
 		return nil

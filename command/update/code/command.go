@@ -4,13 +4,12 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/config"
 	"github.com/draganm/kartusche/manifest"
 	"github.com/urfave/cli/v2"
@@ -60,17 +59,6 @@ var Command = &cli.Command{
 		}
 
 		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
-
-		baseUrl, err := url.Parse(serverBaseURL)
-		if err != nil {
-			return fmt.Errorf("while parsing server base url: %w", err)
-		}
-
-		baseUrl.Path = path.Join(baseUrl.Path, "kartusches", name, "code")
-
-		q := url.Values{}
-
-		baseUrl.RawQuery = q.Encode()
 
 		tf, err := os.CreateTemp("", "")
 		if err != nil {
@@ -171,20 +159,9 @@ var Command = &cli.Command{
 			return fmt.Errorf("while seeking tar file to beginning: %w", err)
 		}
 
-		req, err := http.NewRequest("PATCH", baseUrl.String(), tf)
+		err = client.CallAPI(serverBaseURL, "PATCH", path.Join("kartusches", name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
 		if err != nil {
-			return fmt.Errorf("while creating request: %w", err)
-		}
-
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("while performing PATCH request: %w", err)
-		}
-
-		defer res.Body.Close()
-
-		if res.StatusCode != 204 {
-			return fmt.Errorf("unexpected status %s", res.Status)
+			return err
 		}
 
 		fmt.Println("code updated")

@@ -1,15 +1,12 @@
 package ls
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/draganm/kartusche/command/server"
+	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/config"
 	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli/v2"
@@ -38,34 +35,10 @@ var Command = &cli.Command{
 
 		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
 
-		baseUrl, err := url.Parse(serverBaseURL)
-		if err != nil {
-			return fmt.Errorf("while parsing server base url: %w", err)
-		}
-
-		baseUrl.Path = path.Join(baseUrl.Path, "kartusches")
-
-		req, err := http.NewRequest("GET", baseUrl.String(), nil)
-		if err != nil {
-			return fmt.Errorf("while creating request: %w", err)
-		}
-
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("while performing GET request: %w", err)
-		}
-
-		defer res.Body.Close()
-
-		if res.StatusCode != 200 {
-			return fmt.Errorf("unexpected status %s", res.Status)
-		}
-
 		kl := []server.KartuscheListEntry{}
-
-		err = json.NewDecoder(res.Body).Decode(&kl)
+		err = client.CallAPI(serverBaseURL, "GET", "kartusches", nil, nil, &kl, 200)
 		if err != nil {
-			return fmt.Errorf("while decoding response")
+			return err
 		}
 
 		table := tablewriter.NewWriter(os.Stdout)

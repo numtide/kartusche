@@ -30,7 +30,7 @@ var Command = &cli.Command{
 		serverURL := c.Args().First()
 
 		loginStartResponse := &server.LoginStartResponse{}
-		err = client.CallAPI(serverURL, "POST", "auth/login", nil, loginStartResponse, 200)
+		err = client.CallAPI(serverURL, "POST", "auth/login", nil, nil, loginStartResponse, 200)
 		if err != nil {
 			return fmt.Errorf("while starting login process: %w", err)
 		}
@@ -54,6 +54,7 @@ var Command = &cli.Command{
 			err = client.CallAPI(
 				serverURL,
 				"POST", "auth/access_token",
+				nil,
 				client.JSONEncoder(
 					server.RequestTokenParameters{
 						TokenRequestID: loginStartResponse.TokenRequestID,

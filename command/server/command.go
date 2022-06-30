@@ -100,14 +100,20 @@ var Command = &cli.Command{
 
 		r := mux.NewRouter()
 
-		r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
-		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
-		r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
-		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
+		// ar := r.PathPrefix("/auth").Subrouter()
+
+		// following methods don't require a valid token
 		r.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
 		r.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
 		r.Methods("GET").Path("/auth/verify").HandlerFunc(ks.authVerify)
 		r.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(ks.authOauth2Callback)
+
+		// r.NewRoute().Subrouter()
+		r.Use(ks.authMiddleware)
+		r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
+		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
+		r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
+		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
 
 		s := &http.Server{
 			Handler: r,

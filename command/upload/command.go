@@ -2,12 +2,13 @@ package upload
 
 import (
 	"fmt"
-	"net/http"
+	"io"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/config"
 	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime"
@@ -87,13 +88,6 @@ var Command = &cli.Command{
 
 		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
 
-		baseUrl, err := url.Parse(serverBaseURL)
-		if err != nil {
-			return fmt.Errorf("while parsing server base url: %w", err)
-		}
-
-		baseUrl.Path = path.Join(baseUrl.Path, "kartusches", name)
-
 		hostnames := km.Hostnames
 
 		if c.IsSet("hostname") {
@@ -111,8 +105,6 @@ var Command = &cli.Command{
 
 		q.Set("prefix", prefix)
 
-		baseUrl.RawQuery = q.Encode()
-
 		kf, err := os.Open(kartuscheFileName)
 		if err != nil {
 			return err
@@ -120,20 +112,9 @@ var Command = &cli.Command{
 
 		defer kf.Close()
 
-		req, err := http.NewRequest("PUT", baseUrl.String(), kf)
+		err = client.CallAPI(serverBaseURL, "PUT", path.Join("kartusches", name), q, func() (io.Reader, error) { return kf, nil }, nil, 204)
 		if err != nil {
-			return fmt.Errorf("while creating request: %w", err)
-		}
-
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("while performing PUT request: %w", err)
-		}
-
-		defer res.Body.Close()
-
-		if res.StatusCode != 204 {
-			return fmt.Errorf("unexpected status %s", res.Status)
+			return err
 		}
 
 		return nil
