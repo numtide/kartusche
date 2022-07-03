@@ -26,16 +26,6 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	q := r.URL.Query()
-	hostnames := q["hostname"]
-
-	if len(hostnames) == 0 {
-		err = newErrorWithCode(errors.New("no hostnames provided"), 400)
-		return
-	}
-
-	prefix := q.Get("prefix")
-
 	tf, err := os.CreateTemp(s.tempDir, "")
 	if err != nil {
 		return
@@ -70,10 +60,7 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	k := &kartusche{
-		Hosts:  hostnames,
-		Prefix: prefix,
-	}
+	k := &kartusche{}
 
 	kb, err := json.Marshal(k)
 	if err != nil {

@@ -10,22 +10,14 @@ import (
 	"strings"
 
 	"github.com/draganm/kartusche/common/client"
+	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/config"
-	"github.com/draganm/kartusche/manifest"
 	"github.com/urfave/cli/v2"
 )
 
 var Command = &cli.Command{
-	Name: "code",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "kartusche-server-base-url",
-			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
-		},
-		&cli.StringFlag{
-			Name: "name",
-		},
-	},
+	Name:  "code",
+	Flags: []cli.Flag{},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
 			if err != nil {
@@ -39,26 +31,15 @@ var Command = &cli.Command{
 			dir = "."
 		}
 
-		m, err := manifest.Load(dir)
-		if err != nil {
-			return fmt.Errorf("while loading manifest: %w", err)
-		}
-
-		name := c.String("name")
-		if name == "" {
-			absPath, err := filepath.Abs(".")
-			if err != nil {
-				return fmt.Errorf("while getting absolute path of the current dir")
-			}
-			name = filepath.Base(absPath)
-		}
-
 		cfg, err := config.Current()
 		if err != nil {
 			return fmt.Errorf("while getting current config: %w", err)
 		}
 
-		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
+		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
+		if err != nil {
+			return err
+		}
 
 		tf, err := os.CreateTemp("", "")
 		if err != nil {
@@ -70,13 +51,8 @@ var Command = &cli.Command{
 
 		tw := tar.NewWriter(tf)
 
-		static, err := m.StaticDir()
-		if err != nil {
-			return fmt.Errorf("while determining static dir: %w", err)
-		}
-
 		pathsToLoad := map[string]string{
-			"static":    static,
+			"static":    "static",
 			"handler":   "handler",
 			"lib":       "lib",
 			"tests":     "tests",
@@ -159,7 +135,7 @@ var Command = &cli.Command{
 			return fmt.Errorf("while seeking tar file to beginning: %w", err)
 		}
 
-		err = client.CallAPI(serverBaseURL, "PATCH", path.Join("kartusches", name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
+		err = client.CallAPI(serverBaseURL, "PATCH", path.Join("kartusches", cfg.Name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
 		if err != nil {
 			return err
 		}

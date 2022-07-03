@@ -41,6 +41,7 @@ type Runtime interface {
 	http.Handler
 	Shutdown() error
 	Update(func(tx bolted.SugaredWriteTx) error) error
+	Read(func(tx bolted.SugaredReadTx) error) error
 }
 
 type runtime struct {
@@ -59,6 +60,10 @@ func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (r *runtime) Shutdown() error {
 	return r.db.Close()
+}
+
+func (r *runtime) Read(fn func(tx bolted.SugaredReadTx) error) error {
+	return bolted.SugaredRead(r.db, fn)
 }
 
 func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {

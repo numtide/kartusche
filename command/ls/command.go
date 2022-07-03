@@ -2,24 +2,15 @@ package ls
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
-	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/common/client"
-	"github.com/draganm/kartusche/config"
-	"github.com/olekukonko/tablewriter"
+	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/urfave/cli/v2"
 )
 
 var Command = &cli.Command{
-	Name: "ls",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "kartusche-server-base-url",
-			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
-		},
-	},
+	Name:  "ls",
+	Flags: []cli.Flag{},
 	Action: func(c *cli.Context) (err error) {
 
 		defer func() {
@@ -28,26 +19,21 @@ var Command = &cli.Command{
 			}
 		}()
 
-		cfg, err := config.Current()
-		if err != nil {
-			return fmt.Errorf("while getting current config: %w", err)
-		}
-
-		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
-
-		kl := []server.KartuscheListEntry{}
-		err = client.CallAPI(serverBaseURL, "GET", "kartusches", nil, nil, &kl, 200)
+		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
 		if err != nil {
 			return err
 		}
 
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Name", "Hosts", "Prefix"})
-		for _, k := range kl {
-			table.Append([]string{k.Name, strings.Join(k.Hosts, ", "), k.Prefix})
+		kl := []string{}
+		err = client.CallAPI(serverBaseURL, "GET", "kartusches", nil, nil, client.JSONDecoder(&kl), 200)
+		if err != nil {
+			return err
 		}
 
-		table.Render()
+		for _, k := range kl {
+			fmt.Println(k)
+		}
+
 		return nil
 
 	},

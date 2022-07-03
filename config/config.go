@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,71 +9,73 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var ErrConfigNotFound = errors.New("please make sure you're in a sub-directory of a kartusche")
+
 type Config struct {
-	ServerBaseURL string `yaml:"server_base_url"`
+	Name          string            `yaml:"name"`
+	DefaultRemote string            `yaml:"default_remote"`
+	Remotes       map[string]string `yaml:"remotes"`
 }
 
-func (c *Config) GetServerBaseURL(cliURL string) string {
-	if cliURL != "" {
-		return cliURL
+func (c *Config) GetServerBaseURL(remoteName string) (string, error) {
+
+	if remoteName == "" {
+		remoteName = c.DefaultRemote
 	}
 
-	if c.ServerBaseURL != "" {
-		return c.ServerBaseURL
+	if remoteName == "" {
+		return "", errors.New("no remotes configured")
 	}
 
-	return "http://localhost:3003"
-}
+	u := c.Remotes[remoteName]
 
-func (c *Config) merge(nx *Config) {
-
-	if nx == nil {
-		return
+	if u == "" {
+		return "", fmt.Errorf("could not find remote url for %s", remoteName)
 	}
 
-	if c.ServerBaseURL == "" {
-		c.ServerBaseURL = nx.ServerBaseURL
-	}
-
+	return u, nil
 }
 
 func Current() (*Config, error) {
 
-	c := &Config{}
-
-	cd, err := loadConfig(filepath.Join(".kartusche", "config.yaml"))
+	currentDir, err := os.Getwd()
 	if err != nil {
-		return nil, err
-	}
-	c.merge(cd)
-
-	hd, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("while getting user's home dir: %w", err)
+		return nil, fmt.Errorf("while getting current dir: %w", err)
 	}
 
-	ch, err := loadConfig(filepath.Join(hd, ".kartusche", "config.yaml"))
-	if err != nil {
-		return nil, err
+	for filepath.VolumeName(currentDir) != currentDir {
+		pth := filepath.Join(currentDir, ".kartusche", "config.yaml")
+		_, err = os.Stat(pth)
+		if os.IsNotExist(err) {
+			currentDir = filepath.Dir(currentDir)
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("while getting stat of %s: %w", pth, err)
+		}
+
+		c, err := loadConfig(filepath.Join(".kartusche", "config.yaml"))
+		if err != nil {
+			return nil, err
+		}
+		return c, nil
 	}
 
-	c.merge(ch)
-
-	return c, nil
+	return nil, ErrConfigNotFound
 
 }
 
 func loadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, ErrConfigNotFound
 	}
-
-	defer f.Close()
 
 	if err != nil {
 		return nil, err
 	}
+
+	defer f.Close()
 
 	c := &Config{}
 	err = yaml.NewDecoder(f).Decode(c)
@@ -80,5 +83,44 @@ func loadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("while decoding %s: %w", path, err)
 	}
 
+	if c.Remotes == nil {
+		c.Remotes = make(map[string]string)
+	}
+
 	return c, nil
+}
+
+func (c *Config) Write(dir string) (err error) {
+
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("while writing config: %w", err)
+		}
+	}()
+
+	configDir := filepath.Join(dir, ".kartusche")
+
+	_, err = os.Stat(configDir)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(configDir, 0700)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	pth := filepath.Join(configDir, "config.yaml")
+	f, err := os.OpenFile(pth, os.O_CREATE|os.O_WRONLY, 0700)
+	if err != nil {
+		return fmt.Errorf("while opening kartusche config for write: %w", err)
+	}
+
+	defer f.Close()
+
+	err = yaml.NewEncoder(f).Encode(c)
+	if err != nil {
+		return fmt.Errorf("while writing kartusche config: %w", err)
+	}
+
+	return nil
 }

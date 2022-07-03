@@ -9,9 +9,7 @@ import (
 )
 
 type kartusche struct {
-	Hosts   []string `json:"host"`
-	Prefix  string   `json:"prefix"`
-	Error   string   `json:"error,omitempty"`
+	Error   string `json:"error,omitempty"`
 	name    string
 	runtime runtime.Runtime
 	path    string

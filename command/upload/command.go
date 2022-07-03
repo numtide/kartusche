@@ -3,14 +3,13 @@ package upload
 import (
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/draganm/kartusche/common/client"
+	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/config"
-	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime"
 	"github.com/urfave/cli/v2"
 )
@@ -48,25 +47,6 @@ var Command = &cli.Command{
 			dir = "."
 		}
 
-		km, err := manifest.Load(dir)
-		if err != nil {
-			return fmt.Errorf("while loading manifest")
-		}
-
-		name := c.String("name")
-
-		if name == "" {
-			name = km.Name
-		}
-
-		if name == "" {
-			absPath, err := filepath.Abs(".")
-			if err != nil {
-				return fmt.Errorf("while getting absolute path of the current dir")
-			}
-			name = filepath.Base(absPath)
-		}
-
 		td, err := os.MkdirTemp("", "")
 		if err != nil {
 			return fmt.Errorf("while creating temp dir: %w", err)
@@ -83,27 +63,13 @@ var Command = &cli.Command{
 
 		cfg, err := config.Current()
 		if err != nil {
-			return fmt.Errorf("while getting current config: %w", err)
+			return err
 		}
 
-		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
-
-		hostnames := km.Hostnames
-
-		if c.IsSet("hostname") {
-			hostnames = c.StringSlice("hostname")
+		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
+		if err != nil {
+			return err
 		}
-
-		q := url.Values{}
-		q["hostname"] = hostnames
-
-		prefix := c.String("prefix")
-
-		if prefix == "" {
-			prefix = km.Prefix
-		}
-
-		q.Set("prefix", prefix)
 
 		kf, err := os.Open(kartuscheFileName)
 		if err != nil {
@@ -112,7 +78,7 @@ var Command = &cli.Command{
 
 		defer kf.Close()
 
-		err = client.CallAPI(serverBaseURL, "PUT", path.Join("kartusches", name), q, func() (io.Reader, error) { return kf, nil }, nil, 204)
+		err = client.CallAPI(serverBaseURL, "PUT", path.Join("kartusches", cfg.Name), nil, func() (io.Reader, error) { return kf, nil }, nil, 204)
 		if err != nil {
 			return err
 		}

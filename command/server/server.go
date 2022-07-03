@@ -20,6 +20,7 @@ type server struct {
 	kartusches    map[string]*kartusche
 	kartuschesDir string
 	tempDir       string
+	domain        string
 
 	router   *mux.Router
 	log      *zap.SugaredLogger
@@ -41,7 +42,7 @@ func createIfNotExisting(dir string, perm os.FileMode) error {
 	return nil
 }
 
-func open(path string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*server, error) {
+func open(path string, domain string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*server, error) {
 	err := createIfNotExisting(path, 0700)
 	if err != nil {
 		return nil, err
@@ -109,6 +110,7 @@ func open(path string, verifier verifier.AuthenticationProvider, log *zap.Sugare
 		router:        mux.NewRouter(),
 		log:           log,
 		verifier:      verifier,
+		domain:        domain,
 	}
 
 	go s.runtimeManager()

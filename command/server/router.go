@@ -105,9 +105,7 @@ func (s *server) updateRouter() {
 	for _, k := range s.kartusches {
 		if k.runtime != nil {
 			// TODO allow for any host
-			for _, h := range k.Hosts {
-				r.Host(h).PathPrefix(k.Prefix).Handler(k.runtime)
-			}
+			r.Host(fmt.Sprintf("%s.%s", k.name, s.domain)).Handler(k.runtime)
 		}
 	}
 	s.router = r

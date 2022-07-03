@@ -11,7 +11,6 @@ import (
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
-	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime"
 	"github.com/draganm/kartusche/tests"
 	"github.com/fsnotify/fsnotify"
@@ -108,18 +107,9 @@ var Command = &cli.Command{
 }
 
 func updateRuntimeCode(rt runtime.Runtime, dir string) error {
-	m, err := manifest.Load(dir)
-	if err != nil {
-		return fmt.Errorf("while loading manifest: %w", err)
-	}
-
-	static, err := m.StaticDir()
-	if err != nil {
-		return fmt.Errorf("while determining static dir: %w", err)
-	}
 
 	pathsToLoad := map[string]string{
-		"static":    static,
+		"static":    "static",
 		"handler":   "handler",
 		"lib":       "lib",
 		"tests":     "tests",

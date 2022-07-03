@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +11,13 @@ import (
 	"github.com/draganm/kartusche/common/auth"
 )
 
-func CallAPI(baseURL, method, pth string, q url.Values, bodyEncoder func() (io.Reader, error), response interface{}, expectedStatus int) error {
+func CallAPI(
+	baseURL, method, pth string,
+	q url.Values,
+	bodyEncoder func() (io.Reader, error),
+	responseCallback func(io.Reader) error,
+	expectedStatus int,
+) error {
 
 	var tkn string
 	if !(strings.HasPrefix(pth, "/auth/") || strings.HasPrefix(pth, "auth/")) {
@@ -66,13 +71,11 @@ func CallAPI(baseURL, method, pth string, q url.Values, bodyEncoder func() (io.R
 		return fmt.Errorf("unexpected status %s: %s", res.Status, string(bod))
 	}
 
-	if response == nil {
-		return nil
-	}
-
-	err = json.NewDecoder(res.Body).Decode(response)
-	if err != nil {
-		return fmt.Errorf("while decoding response: %w", err)
+	if responseCallback != nil {
+		err = responseCallback(res.Body)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

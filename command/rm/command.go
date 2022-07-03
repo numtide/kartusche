@@ -4,40 +4,45 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/draganm/kartusche/common/client"
-	"github.com/draganm/kartusche/config"
+	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/urfave/cli/v2"
 )
 
 var Command = &cli.Command{
-	Name: "rm",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "kartusche-server-base-url",
-			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
-		},
-	},
+	Name:  "rm",
+	Flags: []cli.Flag{},
 	Action: func(c *cli.Context) (err error) {
 
 		defer func() {
 			if err != nil {
-				err = cli.Exit(fmt.Errorf("while listing Kartusches: %w", err), 1)
+				err = cli.Exit(fmt.Errorf("while removing Kartusches: %w", err), 1)
 			}
 		}()
 
-		name := c.Args().First()
-		if name == "" {
-			return errors.New("name of the Kartusche must be provided")
+		firstArg := c.Args().First()
+
+		parts := strings.Split(firstArg, "/")
+
+		var name string
+		var remote string
+
+		switch len(parts) {
+		case 1:
+			name = parts[0]
+		case 2:
+			remote = parts[0]
+			name = parts[1]
+		default:
+			return errors.New("either <kartusche name> or <remote name>/<kartusche name> must be provided as an argument")
 		}
 
-		cfg, err := config.Current()
+		serverBaseURL, err := serverurl.BaseServerURL(remote)
 		if err != nil {
-			return fmt.Errorf("while getting current config: %w", err)
+			return err
 		}
-
-		serverBaseURL := cfg.GetServerBaseURL(c.String("kartusche-server-base-url"))
-
 		err = client.CallAPI(serverBaseURL, "DELETE", path.Join("kartusches", name), nil, nil, nil, 204)
 		if err != nil {
 			return err

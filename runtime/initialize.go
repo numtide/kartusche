@@ -12,17 +12,11 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
-	"github.com/draganm/kartusche/manifest"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/gofrs/uuid"
 )
 
 func InitializeNew(fileName, dir string) (err error) {
-
-	m, err := manifest.Load(dir)
-	if err != nil {
-		return fmt.Errorf("while loading manifest: %w", err)
-	}
 
 	db, err := embedded.Open(fileName, 0700)
 	if err != nil {
@@ -43,13 +37,8 @@ func InitializeNew(fileName, dir string) (err error) {
 		}
 	}()
 
-	static, err := m.StaticDir()
-	if err != nil {
-		return fmt.Errorf("while determining static dir: %w", err)
-	}
-
 	pathsToLoad := map[string]string{
-		"static":    static,
+		"static":    "static",
 		"handler":   "handler",
 		"lib":       "lib",
 		"tests":     "tests",
