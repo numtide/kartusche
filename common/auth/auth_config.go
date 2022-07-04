@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = errors.New("auth token not found")
 
 func GetTokenForServer(server string) (string, error) {
 	hd, err := homedir.Dir()
@@ -21,7 +21,7 @@ func GetTokenForServer(server string) (string, error) {
 	configPath := filepath.Join(hd, ".kartusche", "auth.yaml")
 	d, err := os.ReadFile(configPath)
 	if os.IsNotExist(err) {
-		return "", ErrNotFound
+		return "", fmt.Errorf("while getting auth token for %s: %w", server, ErrNotFound)
 	}
 
 	tokens := map[string]string{}

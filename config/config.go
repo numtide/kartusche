@@ -43,10 +43,14 @@ func Current() (*Config, error) {
 		return nil, fmt.Errorf("while getting current dir: %w", err)
 	}
 
-	for filepath.VolumeName(currentDir) != currentDir {
+	for {
 		pth := filepath.Join(currentDir, ".kartusche", "config.yaml")
 		_, err = os.Stat(pth)
 		if os.IsNotExist(err) {
+			parent := filepath.Dir(currentDir)
+			if currentDir == parent {
+				return nil, ErrConfigNotFound
+			}
 			currentDir = filepath.Dir(currentDir)
 			continue
 		}

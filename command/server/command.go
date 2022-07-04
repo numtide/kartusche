@@ -107,11 +107,11 @@ var Command = &cli.Command{
 		r := mux.NewRouter()
 
 		// following methods don't require a valid token
-		ar := r.PathPrefix("/auth").Subrouter()
-		ar.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
-		ar.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
-		ar.Methods("GET").Path("/auth/verify").HandlerFunc(ks.authVerify)
-		ar.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(ks.authOauth2Callback)
+		// ar := r.PathPrefix("auth").Subrouter()
+		r.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
+		r.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
+		r.Methods("GET").Path("/auth/verify").HandlerFunc(ks.authVerify)
+		r.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(ks.authOauth2Callback)
 
 		r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
 		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
