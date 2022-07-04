@@ -125,11 +125,11 @@ var Command = &cli.Command{
 			Handler: r,
 		}
 		serverAddr := c.String("controller-addr")
-		log.Infof("server listening on %s", serverAddr)
 		l, err := net.Listen("tcp", serverAddr)
 		if err != nil {
 			return fmt.Errorf("while starting listener: %w", err)
 		}
+		log.With("addr", l.Addr().String()).Info("server started")
 
 		kartuschesAddr := c.String("kartusches-addr")
 		kl, err := net.Listen("tcp", kartuschesAddr)
@@ -142,7 +142,7 @@ var Command = &cli.Command{
 		}
 
 		go func() {
-			log.Infof("listening for kartusche requests on %s", kartuschesAddr)
+			log.With("addr", kl.Addr().String()).Infof("listening for kartusche requests")
 			err := khs.Serve(kl)
 			if err != nil {
 				log.With("server", "kartusche", "error", err).Error("while serving kartusches")

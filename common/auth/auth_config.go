@@ -13,12 +13,16 @@ import (
 var ErrNotFound = errors.New("auth token not found")
 
 func GetTokenForServer(server string) (string, error) {
-	hd, err := homedir.Dir()
-	if err != nil {
-		return "", fmt.Errorf("could not get user's home dir: %w", err)
+	configHome := os.Getenv("XDG_CONFIG_HOME")
+	if configHome == "" {
+		hd, err := homedir.Dir()
+		if err != nil {
+			return "", fmt.Errorf("could not get user's home dir: %w", err)
+		}
+		configHome = filepath.Join(hd, ".config")
 	}
 
-	configPath := filepath.Join(hd, ".kartusche", "auth.yaml")
+	configPath := filepath.Join(configHome, "kartusche", "auth.yaml")
 	d, err := os.ReadFile(configPath)
 	if os.IsNotExist(err) {
 		return "", fmt.Errorf("while getting auth token for %s: %w", server, ErrNotFound)
@@ -42,12 +46,17 @@ func GetTokenForServer(server string) (string, error) {
 }
 
 func StoreTokenForServer(server, token string) error {
-	hd, err := homedir.Dir()
-	if err != nil {
-		return fmt.Errorf("could not get user's home dir: %w", err)
+
+	configHome := os.Getenv("XDG_CONFIG_HOME")
+	if configHome == "" {
+		hd, err := homedir.Dir()
+		if err != nil {
+			return fmt.Errorf("could not get user's home dir: %w", err)
+		}
+		configHome = filepath.Join(hd, ".config")
 	}
 
-	configPath := filepath.Join(hd, ".kartusche", "auth.yaml")
+	configPath := filepath.Join(configHome, "kartusche", "auth.yaml")
 	d, err := os.ReadFile(configPath)
 
 	tokens := map[string]string{}

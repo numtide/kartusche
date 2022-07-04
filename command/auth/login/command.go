@@ -13,8 +13,14 @@ import (
 )
 
 var Command = &cli.Command{
-	Name:  "login",
-	Flags: []cli.Flag{},
+	Name: "login",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "with-browser",
+			EnvVars: []string{"KARTUSCHE_WITH_BROWSER"},
+			Usage:   "when set, CLI will start browser with the auth URL",
+		},
+	},
 	Action: func(c *cli.Context) (err error) {
 
 		defer func() {
@@ -46,7 +52,9 @@ var Command = &cli.Command{
 
 		fmt.Printf("Please complete authentication flow by visiting %s\n", ur.String())
 
-		go browser.OpenURL(ur.String())
+		if c.Bool("with-browser") {
+			go browser.OpenURL(ur.String())
+		}
 
 		for {
 
