@@ -2,5 +2,5 @@ package skeleton
 
 import "embed"
 
-//go:embed handler/**/* lib/* static/* tests/**/* .gitignore kartusche.yaml init.js
+//go:embed handler/**/* lib/* static/* tests/**/* .gitignore init.js cronjobs/*
 var Content embed.FS

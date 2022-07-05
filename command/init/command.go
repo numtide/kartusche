@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/draganm/kartusche/command/init/skeleton"
+	"github.com/draganm/kartusche/config"
 	"github.com/urfave/cli/v2"
 )
 
@@ -87,6 +88,19 @@ var Command = &cli.Command{
 				// fmt.Println(path.Join(current, e.Name()))
 			}
 
+		}
+
+		cfg := &config.Config{
+			Name:          name,
+			DefaultRemote: "origin",
+			Remotes: map[string]string{
+				"origin": "https://kartusche.netice9.xyz",
+			},
+		}
+
+		err = cfg.Write(name)
+		if err != nil {
+			return fmt.Errorf("while writing config: %w", err)
 		}
 
 		return nil
