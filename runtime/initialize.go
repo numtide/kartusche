@@ -39,6 +39,7 @@ func InitializeNew(fileName, dir string) (err error) {
 
 	pathsToLoad := map[string]string{
 		"static":    "static",
+		"cronjobs":  "cronjobs",
 		"handler":   "handler",
 		"lib":       "lib",
 		"tests":     "tests",

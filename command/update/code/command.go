@@ -53,6 +53,7 @@ var Command = &cli.Command{
 
 		pathsToLoad := map[string]string{
 			"static":    "static",
+			"cronjobs":  "cronjobs",
 			"handler":   "handler",
 			"lib":       "lib",
 			"tests":     "tests",

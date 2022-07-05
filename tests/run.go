@@ -21,6 +21,7 @@ import (
 	"github.com/draganm/kartusche/runtime"
 	"github.com/draganm/kartusche/tests/wsclient"
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
 )
 
 //go:embed expect.js
@@ -126,7 +127,7 @@ func Run(dir string) error {
 				panic(fmt.Errorf("while closing kartusche file: %w", err))
 			}
 
-			kartusche, err := runtime.Open(kartuscheFile.Name())
+			kartusche, err := runtime.Open(kartuscheFile.Name(), zap.NewNop().Sugar())
 			if err != nil {
 				panic(fmt.Errorf("while opening Kartusche: %w", err))
 			}

@@ -15,27 +15,16 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/runtime/cronjobs"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
-	"github.com/draganm/kartusche/runtime/httprequest"
 	"github.com/draganm/kartusche/runtime/jslib"
+	"github.com/draganm/kartusche/runtime/stdlib"
 	"github.com/draganm/kartusche/runtime/template"
-	"github.com/gofrs/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 )
-
-//go:embed stdlib.js
-var stdlibSource string
-
-var compiledStdlib *goja.Program
-
-func init() {
-	var err error
-	compiledStdlib, err = goja.Compile("stdlib.js", stdlibSource, false)
-	if err != nil {
-		panic(fmt.Errorf("while compiling stdlib: %w", err))
-	}
-}
 
 type Runtime interface {
 	http.Handler
@@ -45,9 +34,11 @@ type Runtime interface {
 }
 
 type runtime struct {
-	db bolted.Database
-	r  *mux.Router
-	mu *sync.Mutex
+	db     bolted.Database
+	r      *mux.Router
+	mu     *sync.Mutex
+	cron   *cron.Cron
+	logger *zap.SugaredLogger
 }
 
 func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -59,6 +50,8 @@ func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *runtime) Shutdown() error {
+	ctx := r.cron.Stop()
+	<-ctx.Done()
 	return r.db.Close()
 }
 
@@ -68,35 +61,53 @@ func (r *runtime) Read(fn func(tx bolted.SugaredReadTx) error) error {
 
 func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	var rt *mux.Router
+
+	stCtx := r.cron.Stop()
+	<-stCtx.Done()
+
+	var cron *cron.Cron
 	err := bolted.SugaredWrite(r.db, func(tx bolted.SugaredWriteTx) error {
 		err := fn(tx)
 		if err != nil {
 			return err
 		}
-		rt, err = initializeRouter(tx, r.db)
+
+		jslib, err := jslib.Load(tx)
+		if err != nil {
+			return fmt.Errorf("while loading libs: %w", err)
+		}
+
+		rt, err = initializeRouter(tx, jslib, r.db)
+		if err != nil {
+			return fmt.Errorf("while initializing router: %w", err)
+		}
+
+		cron, err = cronjobs.CreateCron(tx, jslib, r.db, r.logger)
+		if err != nil {
+			return fmt.Errorf("while initializing cron: %w", err)
+		}
 		return err
 	})
 
 	if err != nil {
+		r.cron.Start()
 		return err
 	}
 
 	r.mu.Lock()
 	r.r = rt
+	r.cron = cron
 	r.mu.Unlock()
+	r.cron.Start()
+
 	return nil
 }
 
-func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router, error) {
+func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database) (*mux.Router, error) {
 	dbw := dbwrapper.New(db)
 	r := mux.NewRouter()
 
-	jslib, err := jslib.Load(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = addStaticHandlers(r, tx)
+	err := addStaticHandlers(r, tx)
 	if err != nil {
 		return nil, fmt.Errorf("while adding static handlers: %w", err)
 	}
@@ -132,41 +143,16 @@ func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router,
 				r.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					vars := mux.Vars(r)
 					vm := goja.New()
-					vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
-					vm.Set("require", jslib.Require(vm))
+					stdlib.SetStandardLibMethods(vm, jslib, db)
 					vm.Set("vars", vars)
 					vm.Set("r", r)
 					vm.Set("w", w)
-					vm.Set("println", fmt.Println)
-					vm.Set("read", dbw.Read)
-					vm.Set("write", dbw.Write)
-					vm.Set("http_do", httprequest.Request)
 					vm.Set("render_template", template.RenderTemplate(db, w))
-					vm.Set("render_template_to_s", template.RenderTemplateToString(db))
 					vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
 						os, _ := dbw.Watch(path, fn)
 						return os
 					})
-					_, err = vm.RunProgram(compiledStdlib)
-					if err != nil {
-						http.Error(w, err.Error(), 500)
-						return
-					}
-					vm.Set("uuidv4", func() (string, error) {
-						id, err := uuid.NewV4()
-						if err != nil {
-							return "", err
-						}
-						return id.String(), nil
 
-					})
-					vm.Set("uuidv7", func() (string, error) {
-						id, err := uuid.NewV7(uuid.NanosecondPrecision)
-						if err != nil {
-							return "", err
-						}
-						return id.String(), nil
-					})
 					vm.Set("requestBody", func() (string, error) {
 						d, err := io.ReadAll(r.Body)
 						if err != nil {
@@ -271,7 +257,7 @@ func initializeRouter(tx bolted.SugaredReadTx, db bolted.Database) (*mux.Router,
 
 }
 
-func Open(fileName string) (Runtime, error) {
+func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 	db, err := embedded.Open(fileName, 0700)
 	if err != nil {
 		return nil, fmt.Errorf("while opening database: %w", err)
@@ -279,8 +265,24 @@ func Open(fileName string) (Runtime, error) {
 
 	var r *mux.Router
 
+	var cron *cron.Cron
+
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
-		r, err = initializeRouter(tx, db)
+
+		jslib, err := jslib.Load(tx)
+		if err != nil {
+			return fmt.Errorf("while loading libs: %w", err)
+		}
+
+		r, err = initializeRouter(tx, jslib, db)
+		if err != nil {
+			return fmt.Errorf("while initializing router: %w", err)
+		}
+
+		cron, err = cronjobs.CreateCron(tx, jslib, db, logger)
+		if err != nil {
+			return fmt.Errorf("while initializing cron: %w", err)
+		}
 		return err
 	})
 
@@ -288,6 +290,14 @@ func Open(fileName string) (Runtime, error) {
 		return nil, fmt.Errorf("while starting runtime: %w", err)
 	}
 
-	return &runtime{db: db, r: r, mu: new(sync.Mutex)}, nil
+	cron.Start()
+
+	return &runtime{
+		db:     db,
+		r:      r,
+		mu:     new(sync.Mutex),
+		logger: logger,
+		cron:   cron,
+	}, nil
 
 }

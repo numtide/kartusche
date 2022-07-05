@@ -6,6 +6,7 @@ import (
 
 	"github.com/draganm/kartusche/runtime"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type kartusche struct {
@@ -16,7 +17,7 @@ type kartusche struct {
 }
 
 func (k *kartusche) start() error {
-	rt, err := runtime.Open(k.path)
+	rt, err := runtime.Open(k.path, zap.NewNop().Sugar())
 	if err != nil {
 		k.Error = err.Error()
 		return fmt.Errorf("while starting: %w", err)

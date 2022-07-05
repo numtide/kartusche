@@ -7,10 +7,11 @@ require (
 	github.com/dop251/goja v0.0.0-20220430115111-e1f9dc0755e7
 	github.com/draganm/bolted v0.8.3
 	github.com/fsnotify/fsnotify v1.5.4
+	github.com/go-logr/zapr v1.2.3
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/urfave/cli/v2 v2.3.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
@@ -21,10 +22,10 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
+	github.com/go-logr/logr v1.2.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-memdb v1.3.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect

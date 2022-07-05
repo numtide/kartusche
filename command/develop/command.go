@@ -15,6 +15,7 @@ import (
 	"github.com/draganm/kartusche/tests"
 	"github.com/fsnotify/fsnotify"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 )
 
 var Command = &cli.Command{
@@ -32,6 +33,13 @@ var Command = &cli.Command{
 				err = cli.Exit(fmt.Errorf("while running dev server: %w", err), 1)
 			}
 		}()
+
+		dl, err := zap.NewDevelopment()
+		if err != nil {
+			return fmt.Errorf("while starting logger: %w", err)
+		}
+
+		defer dl.Sync()
 
 		dir := "."
 
@@ -58,7 +66,7 @@ var Command = &cli.Command{
 			return fmt.Errorf("while creating listener: %w", err)
 		}
 
-		rt, err := runtime.Open(".kartusche/development")
+		rt, err := runtime.Open(".kartusche/development", dl.Sugar())
 		if err != nil {
 			return fmt.Errorf("while starting runtime: %w", err)
 		}
@@ -110,6 +118,7 @@ func updateRuntimeCode(rt runtime.Runtime, dir string) error {
 
 	pathsToLoad := map[string]string{
 		"static":    "static",
+		"cronjobs":  "cronjobs",
 		"handler":   "handler",
 		"lib":       "lib",
 		"tests":     "tests",
