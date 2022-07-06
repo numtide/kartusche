@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
@@ -21,6 +22,11 @@ func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Databa
 	vm.Set("write", dbw.Write)
 	vm.Set("http_do", httprequest.Request)
 	vm.Set("render_template_to_s", template.RenderTemplateToString(db))
+	vm.Set("pathEscape", url.PathEscape)
+	vm.Set("pathUnescape", url.PathUnescape)
+	vm.Set("queryEscape", url.QueryEscape)
+	vm.Set("queryUnescape", url.QueryEscape)
+
 	vm.Set("uuidv4", func() (string, error) {
 		id, err := uuid.NewV4()
 		if err != nil {
