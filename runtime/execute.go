@@ -77,7 +77,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 			return fmt.Errorf("while loading libs: %w", err)
 		}
 
-		rt, err = initializeRouter(tx, jslib, r.db)
+		rt, err = initializeRouter(tx, jslib, r.db, r.logger)
 		if err != nil {
 			return fmt.Errorf("while initializing router: %w", err)
 		}
@@ -103,7 +103,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	return nil
 }
 
-func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database) (*mux.Router, error) {
+func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger *zap.SugaredLogger) (*mux.Router, error) {
 	dbw := dbwrapper.New(db)
 	r := mux.NewRouter()
 
@@ -181,6 +181,7 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 							}
 							done, err := selectables[chosen].Fn()(val.Interface())
 							if err != nil {
+								logger.With("error", err).Error("while running selectable")
 								continue
 							}
 							if done {
@@ -274,7 +275,7 @@ func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 			return fmt.Errorf("while loading libs: %w", err)
 		}
 
-		r, err = initializeRouter(tx, jslib, db)
+		r, err = initializeRouter(tx, jslib, db, logger)
 		if err != nil {
 			return fmt.Errorf("while initializing router: %w", err)
 		}

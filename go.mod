@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cbroglie/mustache v1.3.1
-	github.com/dop251/goja v0.0.0-20220430115111-e1f9dc0755e7
+	github.com/dop251/goja v0.0.0-20220705101429-189bfeb9f530
 	github.com/draganm/bolted v0.8.3
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-logr/zapr v1.2.3

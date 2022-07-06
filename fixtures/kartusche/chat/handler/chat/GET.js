@@ -1,4 +1,4 @@
-const username = r.uRL.query().get("username")
+const username = r.url.query().get("username")
 
 write(tx => {
     tx.put(["chat", uuidv7()], `${username} has joined`)

@@ -8,7 +8,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-var allCapsMatcher = regexp.MustCompile(`^[^a-a]+$`)
+var allCapsMatcher = regexp.MustCompile(`^[:upper:]+$`)
 
 func smartUncapitalize(s string) string {
 

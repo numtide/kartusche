@@ -6,6 +6,7 @@ import (
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"go.uber.org/multierr"
 )
 
 type DB struct {
@@ -23,7 +24,7 @@ func (db *DB) Read(f func(*readTxWrapper) (interface{}, error)) (res interface{}
 	}
 
 	defer func() {
-		err = tx.Finish()
+		err = multierr.Append(err, tx.Finish())
 	}()
 
 	return f(&readTxWrapper{ReadTx: tx})
