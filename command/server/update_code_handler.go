@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"github.com/draganm/kartusche/common/util/path"
 	"github.com/gorilla/mux"
 )
 
@@ -63,19 +63,14 @@ func (s *server) updateCode(w http.ResponseWriter, r *http.Request) {
 				return fmt.Errorf("while reading code tar: %w", err)
 			}
 
-			cleanPath := path.Clean(h.Name)
-			dp, err := dbpath.Parse(cleanPath)
-			if err != nil {
-				return fmt.Errorf("while parsing dbpath: %w", err)
-
-			}
+			dp := path.FilePathToDBPath(h.Name)
 			if h.Typeflag == tar.TypeDir {
 				tx.CreateMap(dp)
 			}
 			if h.Typeflag == tar.TypeReg {
 				d, err := io.ReadAll(tr)
 				if err != nil {
-					return fmt.Errorf("while reading entry %s: %w", cleanPath, err)
+					return fmt.Errorf("while reading entry %s: %w", h.Name, err)
 				}
 				tx.Put(dp, d)
 			}

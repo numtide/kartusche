@@ -11,6 +11,7 @@ import (
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"github.com/draganm/kartusche/common/util/path"
 	"github.com/draganm/kartusche/runtime"
 	"github.com/draganm/kartusche/tests"
 	"github.com/fsnotify/fsnotify"
@@ -162,7 +163,11 @@ func loadFromPath(dir string, wtx bolted.SugaredWriteTx, prefix dbpath.Path) err
 
 	err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
 
-		pathParts := strings.Split(file, string(os.PathSeparator))
+		if err != nil {
+			return fmt.Errorf("while walking dir: %w", err)
+		}
+
+		pathParts := path.FilePathToDBPath(file)
 
 		dbPathParts := pathParts[len(absDirPaths):]
 

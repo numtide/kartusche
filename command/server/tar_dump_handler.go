@@ -3,12 +3,13 @@ package server
 import (
 	"archive/tar"
 	"errors"
-	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"github.com/draganm/kartusche/common/util/path"
 	"github.com/gorilla/mux"
 )
 
@@ -48,9 +49,8 @@ func (s *server) tarDump(w http.ResponseWriter, r *http.Request) {
 			toDo = toDo[1:]
 			for it := tx.Iterator(current); !it.IsDone(); it.Next() {
 				sp := current.Append(it.GetKey())
-				fmt.Println(sp.String())
 				h := &tar.Header{
-					Name:    sp.String(),
+					Name:    filepath.ToSlash(path.DBPathToFilePath(sp)),
 					ModTime: time.Now(),
 					Mode:    0700,
 				}
@@ -90,6 +90,8 @@ func (s *server) tarDump(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	s.log.With("error", err).Error("while dumping tar")
+	if err != nil {
+		s.log.With("error", err).Error("while dumping tar")
+	}
 
 }

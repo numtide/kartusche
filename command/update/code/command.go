@@ -102,6 +102,7 @@ var Command = &cli.Command{
 				if err != nil {
 					return fmt.Errorf("while getting absolute path of %s: %w", file, err)
 				}
+
 				pathParts := strings.Split(absPath, string(os.PathSeparator))
 				pathParts = append([]string{p}, pathParts[len(absDirParts):]...)
 

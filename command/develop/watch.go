@@ -17,7 +17,7 @@ const chmodMask fsnotify.Op = ^fsnotify.Op(0) ^ fsnotify.Chmod
 // criteria of all reflexes can be ignored.
 func watch(root string, watcher *fsnotify.Watcher, names chan<- string, done chan<- error) {
 	if err := filepath.Walk(root, walker(watcher)); err != nil {
-		fmt.Println("walk error", err)
+		fmt.Println("while walking dir", err)
 	}
 
 	for {

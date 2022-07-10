@@ -12,6 +12,7 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/common/util/path"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/gofrs/uuid"
 )
@@ -128,10 +129,13 @@ func loadFromPath(dir string, wtx bolted.WriteTx, prefix dbpath.Path) error {
 
 	err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
 
-		pathParts := strings.Split(file, string(os.PathSeparator))
+		if err != nil {
+			return fmt.Errorf("while walking dir: %w", err)
+		}
+
+		pathParts := path.FilePathToDBPath(file)
 
 		dbPathParts := pathParts[len(absDirPaths):]
-
 		dbp := prefix.Append(dbPathParts...)
 		if len(dbp) == 0 {
 			return nil
