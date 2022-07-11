@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"go.uber.org/multierr"
@@ -11,10 +12,11 @@ import (
 
 type DB struct {
 	db bolted.Database
+	vm *goja.Runtime
 }
 
-func New(db bolted.Database) *DB {
-	return &DB{db: db}
+func New(db bolted.Database, vm *goja.Runtime) *DB {
+	return &DB{db: db, vm: vm}
 }
 
 func (db *DB) Read(f func(*readTxWrapper) (interface{}, error)) (res interface{}, err error) {
@@ -68,6 +70,7 @@ func (rtw *readTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 }
 
 type WriteTxWrapper struct {
+	VM *goja.Runtime
 	bolted.WriteTx
 }
 
@@ -86,6 +89,60 @@ func (wtw *WriteTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 	}
 
 	return &iteratorWrapper{Iterator: it}, nil
+}
+
+func (wtw *WriteTxWrapper) IteratorFor(path []string) (*goja.Object, error) {
+
+	it, err := wtw.WriteTx.Iterator(dataPath.Append(path...))
+	if err != nil {
+		return nil, fmt.Errorf("while creating iterator: %w", err)
+	}
+
+	type iterResult struct {
+		Done  bool
+		Value goja.Value
+	}
+
+	vm := wtw.VM
+	o := vm.NewObject()
+	o.SetSymbol(goja.SymIterator, func() (*goja.Object, error) {
+		iter := vm.NewObject()
+		iter.Set("next", func() (*iterResult, error) {
+
+			done, err := it.IsDone()
+			if err != nil {
+				return nil, fmt.Errorf("while getting isDone from iterator: %w", err)
+			}
+
+			if done {
+				return &iterResult{
+					Done: true,
+				}, nil
+			}
+
+			key, err := it.GetKey()
+			if err != nil {
+				return nil, fmt.Errorf("while getting key from iterator: %w", err)
+			}
+
+			value, err := it.GetValue()
+			if err != nil {
+				return nil, fmt.Errorf("while getting value from iterator: %w", err)
+			}
+
+			err = it.Next()
+			if err != nil {
+				return nil, fmt.Errorf("getting next from iterator: %w", err)
+			}
+
+			return &iterResult{
+				Value: vm.ToValue([]string{key, string(value)}),
+				Done:  false,
+			}, nil
+		})
+		return iter, nil
+	})
+	return o, nil
 }
 
 func (wtw *WriteTxWrapper) Exists(path []string) (bool, error) {
@@ -159,7 +216,7 @@ func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (res interface
 		}
 	}()
 
-	return f(&WriteTxWrapper{WriteTx: tx})
+	return f(&WriteTxWrapper{WriteTx: tx, VM: db.vm})
 
 }
 

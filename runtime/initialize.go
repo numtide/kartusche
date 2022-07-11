@@ -8,15 +8,11 @@ import (
 
 	_ "embed"
 
-	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/util/path"
-	"github.com/draganm/kartusche/runtime/dbwrapper"
-	"github.com/draganm/kartusche/runtime/jslib"
-	"github.com/draganm/kartusche/runtime/stdlib"
 )
 
 func InitializeNew(fileName, dir string) (err error) {
@@ -45,33 +41,9 @@ func InitializeNew(fileName, dir string) (err error) {
 			tx.CreateMap(dataPath)
 		}
 
-		initPath := dbpath.ToPath("init.js")
-		ex = tx.Exists(initPath)
-
-		if ex {
-			initScript := tx.Get(initPath)
-
-			initScriptProgram, err := goja.Compile("init.js", string(initScript), false)
-			if err != nil {
-				return fmt.Errorf("while parsing init: %w", err)
-			}
-
-			vm := goja.New()
-			lib, err := jslib.Load(tx)
-			if err != nil {
-				return fmt.Errorf("while loading jslib: %w", err)
-			}
-
-			stdlib.SetStandardLibMethods(vm, lib, db)
-			vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: tx.GetRawWriteTX()})
-			vm.GlobalObject().Delete("read")
-			vm.GlobalObject().Delete("write")
-
-			_, err = vm.RunProgram(initScriptProgram)
-			if err != nil {
-				return fmt.Errorf("while running init script: %w", err)
-			}
-
+		err = runInit(tx, db)
+		if err != nil {
+			return fmt.Errorf("while running init.js: %w", err)
 		}
 
 		return nil

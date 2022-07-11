@@ -72,6 +72,11 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 			return err
 		}
 
+		err = runInit(tx, r.db)
+		if err != nil {
+			return fmt.Errorf("while running init.js: %w", err)
+		}
+
 		jslib, err := jslib.Load(tx)
 		if err != nil {
 			return fmt.Errorf("while loading libs: %w", err)
@@ -103,8 +108,41 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	return nil
 }
 
+func runInit(tx bolted.SugaredWriteTx, db bolted.Database) (err error) {
+	initPath := dbpath.ToPath("init.js")
+	ex := tx.Exists(initPath)
+
+	if ex {
+		initScript := tx.Get(initPath)
+
+		initScriptProgram, err := goja.Compile("init.js", string(initScript), false)
+		if err != nil {
+			return fmt.Errorf("while parsing init: %w", err)
+		}
+
+		vm := goja.New()
+		lib, err := jslib.Load(tx)
+		if err != nil {
+			return fmt.Errorf("while loading jslib: %w", err)
+		}
+
+		stdlib.SetStandardLibMethods(vm, lib, db)
+		vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: tx.GetRawWriteTX(), VM: vm})
+		vm.GlobalObject().Delete("read")
+		vm.GlobalObject().Delete("write")
+
+		_, err = vm.RunProgram(initScriptProgram)
+		if err != nil {
+			return fmt.Errorf("while running init script: %w", err)
+		}
+
+	}
+
+	return nil
+
+}
+
 func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger *zap.SugaredLogger) (*mux.Router, error) {
-	dbw := dbwrapper.New(db)
 	r := mux.NewRouter()
 
 	err := addStaticHandlers(r, tx)
@@ -144,6 +182,8 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 					vars := mux.Vars(r)
 					vm := goja.New()
 					stdlib.SetStandardLibMethods(vm, jslib, db)
+					dbw := dbwrapper.New(db, vm)
+
 					vm.Set("vars", vars)
 					vm.Set("r", r)
 					vm.Set("w", w)

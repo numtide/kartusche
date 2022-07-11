@@ -14,7 +14,7 @@ import (
 )
 
 func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Database) {
-	dbw := dbwrapper.New(db)
+	dbw := dbwrapper.New(db, vm)
 	vm.SetFieldNameMapper(newSmartCapFieldNameMapper())
 	vm.Set("require", jslib.Require(vm))
 	vm.Set("println", fmt.Println)
