@@ -29,12 +29,13 @@ func (db *DB) Read(f func(*readTxWrapper) (interface{}, error)) (res interface{}
 		err = multierr.Append(err, tx.Finish())
 	}()
 
-	return f(&readTxWrapper{ReadTx: tx})
+	return f(&readTxWrapper{ReadTx: tx, VM: db.vm})
 
 }
 
 type readTxWrapper struct {
 	bolted.ReadTx
+	VM *goja.Runtime
 }
 
 var dataPath = dbpath.ToPath("data")
@@ -69,6 +70,10 @@ func (rtw *readTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 	return &iteratorWrapper{Iterator: it}, nil
 }
 
+func (rtw *readTxWrapper) IteratorFor(path []string) (*goja.Object, error) {
+	return iteratorFor(rtw.ReadTx.Iterator, rtw.VM, path)
+}
+
 type WriteTxWrapper struct {
 	VM *goja.Runtime
 	bolted.WriteTx
@@ -92,57 +97,7 @@ func (wtw *WriteTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 }
 
 func (wtw *WriteTxWrapper) IteratorFor(path []string) (*goja.Object, error) {
-
-	it, err := wtw.WriteTx.Iterator(dataPath.Append(path...))
-	if err != nil {
-		return nil, fmt.Errorf("while creating iterator: %w", err)
-	}
-
-	type iterResult struct {
-		Done  bool
-		Value goja.Value
-	}
-
-	vm := wtw.VM
-	o := vm.NewObject()
-	o.SetSymbol(goja.SymIterator, func() (*goja.Object, error) {
-		iter := vm.NewObject()
-		iter.Set("next", func() (*iterResult, error) {
-
-			done, err := it.IsDone()
-			if err != nil {
-				return nil, fmt.Errorf("while getting isDone from iterator: %w", err)
-			}
-
-			if done {
-				return &iterResult{
-					Done: true,
-				}, nil
-			}
-
-			key, err := it.GetKey()
-			if err != nil {
-				return nil, fmt.Errorf("while getting key from iterator: %w", err)
-			}
-
-			value, err := it.GetValue()
-			if err != nil {
-				return nil, fmt.Errorf("while getting value from iterator: %w", err)
-			}
-
-			err = it.Next()
-			if err != nil {
-				return nil, fmt.Errorf("getting next from iterator: %w", err)
-			}
-
-			return &iterResult{
-				Value: vm.ToValue([]string{key, string(value)}),
-				Done:  false,
-			}, nil
-		})
-		return iter, nil
-	})
-	return o, nil
+	return iteratorFor(wtw.WriteTx.Iterator, wtw.VM, path)
 }
 
 func (wtw *WriteTxWrapper) Exists(path []string) (bool, error) {
