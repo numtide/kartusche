@@ -116,6 +116,7 @@ var Command = &cli.Command{
 		r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
 		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
 		r.Methods("GET").Path("/kartusches/{name}").HandlerFunc(ks.tarDump)
+		r.Methods("GET").Path("/kartusches/{name}/info/handlers").HandlerFunc(ks.infoHandlers)
 		r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
 		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
 
