@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/draganm/kartusche/common/client"
+	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/config"
 	"github.com/urfave/cli/v2"
@@ -51,23 +52,13 @@ var Command = &cli.Command{
 
 		tw := tar.NewWriter(tf)
 
-		pathsToLoad := map[string]string{
-			"static":    "static",
-			"cronjobs":  "cronjobs",
-			"handler":   "handler",
-			"lib":       "lib",
-			"tests":     "tests",
-			"templates": "templates",
-			"init.js":   "init.js",
-		}
+		for _, p := range paths.WellKnown {
 
-		for p, pth := range pathsToLoad {
-
-			if !filepath.IsAbs(pth) {
-				pth = filepath.Join(dir, pth)
+			if !filepath.IsAbs(p) {
+				p = filepath.Join(dir, p)
 			}
 
-			_, err = os.Stat(pth)
+			_, err = os.Stat(p)
 			if os.IsNotExist(err) {
 				continue
 			}
@@ -76,7 +67,7 @@ var Command = &cli.Command{
 				return err
 			}
 
-			absDir, err := filepath.Abs(pth)
+			absDir, err := filepath.Abs(p)
 
 			if err != nil {
 				return fmt.Errorf("while getting absolute dir of %s: %w", dir, err)
@@ -87,7 +78,7 @@ var Command = &cli.Command{
 			err = filepath.Walk(absDir, func(file string, fi os.FileInfo, err error) error {
 
 				if err != nil {
-					return err
+					return fmt.Errorf("while walking dir: %w", err)
 				}
 
 				// generate tar header

@@ -57,8 +57,8 @@ github.com/dop251/goja v0.0.0-20220705101429-189bfeb9f530 h1:936YSsrki8Z6H48PPFb
 github.com/dop251/goja v0.0.0-20220705101429-189bfeb9f530/go.mod h1:TQJQ+ZNyFVvUtUEtCZxBhfWiH7RJqR3EivNmvD6Waik=
 github.com/dop251/goja_nodejs v0.0.0-20210225215109-d91c329300e7/go.mod h1:hn7BA7c8pLvoGndExHudxTDKZ84Pyvv+90pbBjbTz0Y=
 github.com/dop251/goja_nodejs v0.0.0-20211022123610-8dd9abb0616d/go.mod h1:DngW8aVqWbuLRMHItjPUyqdj+HWPvnQe8V8y1nDpIbM=
-github.com/draganm/bolted v0.8.3 h1:k2MDDIr5wP/AbRY4Kcy2GkF5m2zJfQfGr+ewIlpqy3U=
-github.com/draganm/bolted v0.8.3/go.mod h1:JzpeZ2BmuDuMggRz3gVL+1qX2C6b8+6pTgILbrZPztw=
+github.com/draganm/bolted v0.8.4 h1:uEkVnSjES+ffi9RYM2oBbXaUw+nY8WeI0LnddHCD9D4=
+github.com/draganm/bolted v0.8.4/go.mod h1:JzpeZ2BmuDuMggRz3gVL+1qX2C6b8+6pTgILbrZPztw=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.5.4 h1:jRbGcIw6P2Meqdwuo0H1p6JVLbL5DHKAKlYndzMwVZI=

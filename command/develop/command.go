@@ -11,6 +11,7 @@ import (
 
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/util/path"
 	"github.com/draganm/kartusche/runtime"
 	"github.com/draganm/kartusche/tests"
@@ -117,24 +118,14 @@ var Command = &cli.Command{
 
 func updateRuntimeCode(rt runtime.Runtime, dir string) error {
 
-	pathsToLoad := map[string]string{
-		"static":    "static",
-		"cronjobs":  "cronjobs",
-		"handler":   "handler",
-		"lib":       "lib",
-		"tests":     "tests",
-		"templates": "templates",
-		"init.js":   "init.js",
-	}
-
 	return rt.Update(func(tx bolted.SugaredWriteTx) error {
-		for p, local := range pathsToLoad {
+		for _, p := range paths.WellKnown {
 			pth := dbpath.ToPath(p)
 			if tx.Exists(pth) {
 				tx.Delete(pth)
 			}
 
-			localFile := filepath.Join(dir, local)
+			localFile := filepath.Join(dir, p)
 			err := loadFromPath(localFile, tx, pth)
 			if err != nil {
 				return err

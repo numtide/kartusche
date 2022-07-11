@@ -12,9 +12,11 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
+	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/util/path"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
-	"github.com/gofrs/uuid"
+	"github.com/draganm/kartusche/runtime/jslib"
+	"github.com/draganm/kartusche/runtime/stdlib"
 )
 
 func InitializeNew(fileName, dir string) (err error) {
@@ -25,92 +27,61 @@ func InitializeNew(fileName, dir string) (err error) {
 	}
 	defer db.Close()
 
-	wtx, err := db.BeginWrite()
-	if err != nil {
-		return fmt.Errorf("while starting write transaction: %w", err)
-	}
-
-	defer func() {
-		if err != nil {
-			wtx.Rollback()
-		} else {
-			err = wtx.Finish()
-		}
-	}()
-
-	pathsToLoad := map[string]string{
-		"static":    "static",
-		"cronjobs":  "cronjobs",
-		"handler":   "handler",
-		"lib":       "lib",
-		"tests":     "tests",
-		"templates": "templates",
-		"init.js":   "init.js",
-	}
-
-	for p, pth := range pathsToLoad {
-		if !filepath.IsAbs(pth) {
-			pth = filepath.Join(dir, pth)
-		}
-		err = loadFromPath(pth, wtx, dbpath.ToPath(filepath.Base(p)))
-		if err != nil {
-			return fmt.Errorf("while loading %s: %w", pth, err)
-		}
-	}
-
-	dataPath := dbpath.ToPath("data")
-	ex, err := wtx.Exists(dataPath)
-	if err != nil {
-		return err
-	}
-
-	if !ex {
-		err = wtx.CreateMap(dataPath)
-		if err != nil {
-			return err
-		}
-	}
-
-	initPath := dbpath.ToPath("init.js")
-	ex, err = wtx.Exists(initPath)
-	if err != nil {
-		return err
-	}
-
-	if ex {
-		initScript, err := wtx.Get(initPath)
-		if err != nil {
-			return fmt.Errorf("while getting init.js: %w", err)
-		}
-
-		initScriptProgram, err := goja.Compile("init.js", string(initScript), false)
-		if err != nil {
-			return fmt.Errorf("while parsing init: %w", err)
-		}
-
-		vm := goja.New()
-		vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
-		vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: wtx})
-		vm.Set("uuidv4", uuid.NewV4)
-		vm.Set("uuidv7", func() (string, error) {
-			id, err := uuid.NewV7(uuid.NanosecondPrecision)
-			if err != nil {
-				return "", err
+	err = bolted.SugaredWrite(db, func(tx bolted.SugaredWriteTx) error {
+		for _, p := range paths.WellKnown {
+			if !filepath.IsAbs(p) {
+				p = filepath.Join(dir, p)
 			}
-			return id.String(), nil
-		})
-
-		_, err = vm.RunProgram(initScriptProgram)
-		if err != nil {
-			return fmt.Errorf("while running init script: %w", err)
+			err = loadFromPath(p, tx, dbpath.ToPath(filepath.Base(p)))
+			if err != nil {
+				return fmt.Errorf("while loading %s: %w", p, err)
+			}
 		}
 
-	}
+		dataPath := dbpath.ToPath("data")
+		ex := tx.Exists(dataPath)
+
+		if !ex {
+			tx.CreateMap(dataPath)
+		}
+
+		initPath := dbpath.ToPath("init.js")
+		ex = tx.Exists(initPath)
+
+		if ex {
+			initScript := tx.Get(initPath)
+
+			initScriptProgram, err := goja.Compile("init.js", string(initScript), false)
+			if err != nil {
+				return fmt.Errorf("while parsing init: %w", err)
+			}
+
+			vm := goja.New()
+			lib, err := jslib.Load(tx)
+			if err != nil {
+				return fmt.Errorf("while loading jslib: %w", err)
+			}
+
+			stdlib.SetStandardLibMethods(vm, lib, db)
+			vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: tx.GetRawWriteTX()})
+			vm.GlobalObject().Delete("read")
+			vm.GlobalObject().Delete("write")
+
+			_, err = vm.RunProgram(initScriptProgram)
+			if err != nil {
+				return fmt.Errorf("while running init script: %w", err)
+			}
+
+		}
+
+		return nil
+
+	})
 
 	return nil
 }
 
-func loadFromPath(dir string, wtx bolted.WriteTx, prefix dbpath.Path) error {
+func loadFromPath(dir string, wtx bolted.SugaredWriteTx, prefix dbpath.Path) error {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return fmt.Errorf("while getting abs path: %w", err)
@@ -142,10 +113,7 @@ func loadFromPath(dir string, wtx bolted.WriteTx, prefix dbpath.Path) error {
 		}
 
 		if fi.IsDir() {
-			err = wtx.CreateMap(dbp)
-			if err != nil {
-				return err
-			}
+			wtx.CreateMap(dbp)
 			return nil
 		}
 
@@ -155,10 +123,7 @@ func loadFromPath(dir string, wtx bolted.WriteTx, prefix dbpath.Path) error {
 				return fmt.Errorf("while reading %s: %w", file, err)
 			}
 
-			err = wtx.Put(dbp, d)
-			if err != nil {
-				return err
-			}
+			wtx.Put(dbp, d)
 		}
 		return nil
 	})
