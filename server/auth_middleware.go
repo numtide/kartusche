@@ -7,7 +7,7 @@ import (
 	"github.com/draganm/bolted"
 )
 
-func (s *server) authMiddleware(next http.Handler) http.Handler {
+func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if strings.HasPrefix(r.URL.Path, "/auth") {

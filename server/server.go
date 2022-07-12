@@ -9,12 +9,12 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
-	"github.com/draganm/kartusche/command/server/verifier"
+	"github.com/draganm/kartusche/server/verifier"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 
-type server struct {
+type Server struct {
 	db            bolted.Database
 	mu            *sync.Mutex
 	kartusches    map[string]*kartusche
@@ -22,9 +22,10 @@ type server struct {
 	tempDir       string
 	domain        string
 
-	router   *mux.Router
-	log      *zap.SugaredLogger
-	verifier verifier.AuthenticationProvider
+	ServerRouter *mux.Router
+	router       *mux.Router
+	log          *zap.SugaredLogger
+	verifier     verifier.AuthenticationProvider
 }
 
 func createIfNotExisting(dir string, perm os.FileMode) error {
@@ -42,7 +43,7 @@ func createIfNotExisting(dir string, perm os.FileMode) error {
 	return nil
 }
 
-func open(path string, domain string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*server, error) {
+func Open(path string, domain string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*Server, error) {
 	err := createIfNotExisting(path, 0700)
 	if err != nil {
 		return nil, err
@@ -101,7 +102,9 @@ func open(path string, domain string, verifier verifier.AuthenticationProvider, 
 		}
 	}
 
-	s := &server{
+	r := mux.NewRouter()
+
+	s := &Server{
 		db:            db,
 		kartusches:    map[string]*kartusche{},
 		kartuschesDir: kartuschesDir,
@@ -109,9 +112,26 @@ func open(path string, domain string, verifier verifier.AuthenticationProvider, 
 		mu:            new(sync.Mutex),
 		router:        mux.NewRouter(),
 		log:           log,
+		ServerRouter:  r,
 		verifier:      verifier,
 		domain:        domain,
 	}
+
+	// following methods don't require a valid token
+	// ar := r.PathPrefix("auth").Subrouter()
+	r.Methods("POST").Path("/auth/login").HandlerFunc(s.loginStart)
+	r.Methods("POST").Path("/auth/access_token").HandlerFunc(s.accessToken)
+	r.Methods("GET").Path("/auth/verify").HandlerFunc(s.authVerify)
+	r.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(s.authOauth2Callback)
+
+	r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(s.upload)
+	r.Methods("GET").Path("/kartusches").HandlerFunc(s.list)
+	r.Methods("GET").Path("/kartusches/{name}").HandlerFunc(s.tarDump)
+	r.Methods("GET").Path("/kartusches/{name}/info/handlers").HandlerFunc(s.infoHandlers)
+	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
+	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
+
+	r.Use(s.authMiddleware)
 
 	go s.runtimeManager()
 

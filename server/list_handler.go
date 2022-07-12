@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *server) list(w http.ResponseWriter, r *http.Request) {
+func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {
