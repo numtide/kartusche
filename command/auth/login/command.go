@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
+	"github.com/draganm/kartusche/server"
 	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 )

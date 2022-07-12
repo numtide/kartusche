@@ -10,14 +10,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	rt := s.router
 	s.mu.Unlock()
 	rt.ServeHTTP(w, r)
 }
 
-func (s *server) runtimeManager() (err error) {
+func (s *Server) runtimeManager() (err error) {
 	log := s.log.With("process", "runtimeManager")
 	defer func() {
 		if err != nil {
@@ -98,7 +98,7 @@ func (s *server) runtimeManager() (err error) {
 
 }
 
-func (s *server) updateRouter() {
+func (s *Server) updateRouter() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r := mux.NewRouter()

@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) updateCode(w http.ResponseWriter, r *http.Request) {
+func (s *Server) updateCode(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

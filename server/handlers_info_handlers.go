@@ -20,7 +20,7 @@ type HandlerInfo struct {
 	Source string `json:"source"`
 }
 
-func (s *server) infoHandlers(w http.ResponseWriter, r *http.Request) {
+func (s *Server) infoHandlers(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

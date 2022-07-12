@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) rm(w http.ResponseWriter, r *http.Request) {
+func (s *Server) rm(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

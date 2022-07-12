@@ -5,8 +5,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/draganm/kartusche/command/server/verifier"
-	"github.com/gorilla/mux"
+	"github.com/draganm/kartusche/server"
+	"github.com/draganm/kartusche/server/verifier"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -94,7 +94,7 @@ var Command = &cli.Command{
 			)
 		}
 
-		ks, err := open(
+		ks, err := server.Open(
 			c.String("work-dir"),
 			c.String("kartusche-domain"),
 			vf,
@@ -104,26 +104,8 @@ var Command = &cli.Command{
 			return fmt.Errorf("while starting kartusche server: %w", err)
 		}
 
-		r := mux.NewRouter()
-
-		// following methods don't require a valid token
-		// ar := r.PathPrefix("auth").Subrouter()
-		r.Methods("POST").Path("/auth/login").HandlerFunc(ks.loginStart)
-		r.Methods("POST").Path("/auth/access_token").HandlerFunc(ks.accessToken)
-		r.Methods("GET").Path("/auth/verify").HandlerFunc(ks.authVerify)
-		r.Methods("GET").Path("/auth/oauth2/callback").HandlerFunc(ks.authOauth2Callback)
-
-		r.Methods("PUT").Path("/kartusches/{name}").HandlerFunc(ks.upload)
-		r.Methods("GET").Path("/kartusches").HandlerFunc(ks.list)
-		r.Methods("GET").Path("/kartusches/{name}").HandlerFunc(ks.tarDump)
-		r.Methods("GET").Path("/kartusches/{name}/info/handlers").HandlerFunc(ks.infoHandlers)
-		r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(ks.rm)
-		r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(ks.updateCode)
-
-		r.Use(ks.authMiddleware)
-
 		s := &http.Server{
-			Handler: r,
+			Handler: ks.ServerRouter,
 		}
 		serverAddr := c.String("controller-addr")
 		l, err := net.Listen("tcp", serverAddr)

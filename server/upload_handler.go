@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) upload(w http.ResponseWriter, r *http.Request) {
+func (s *Server) upload(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

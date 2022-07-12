@@ -8,11 +8,11 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func (s *server) authVerify(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authVerify(w http.ResponseWriter, r *http.Request) {
 	s.verifier.Verify(w, r)
 }
 
-func (s *server) authOauth2Callback(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authOauth2Callback(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

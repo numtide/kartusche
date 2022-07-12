@@ -22,7 +22,7 @@ type LoginStartResponse struct {
 	VerificationURI string `json:"verification_uri"`
 }
 
-func (s *server) loginStart(w http.ResponseWriter, r *http.Request) {
+func (s *Server) loginStart(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {
@@ -74,7 +74,7 @@ type AccessTokenResponse struct {
 	Error       string `json:"error,omitempty"`
 }
 
-func (s *server) accessToken(w http.ResponseWriter, r *http.Request) {
+func (s *Server) accessToken(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	defer func() {

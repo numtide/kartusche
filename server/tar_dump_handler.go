@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) tarDump(w http.ResponseWriter, r *http.Request) {
+func (s *Server) tarDump(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	var name = mux.Vars(r)["name"]
