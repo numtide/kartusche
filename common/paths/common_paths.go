@@ -7,5 +7,7 @@ var WellKnown = []string{
 	"lib",
 	"tests",
 	"templates",
+	"jobs",
+	"job-queue",
 	"init.js",
 }

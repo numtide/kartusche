@@ -13,6 +13,7 @@ import (
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/util/path"
+	"go.uber.org/zap"
 )
 
 func InitializeNew(fileName, dir string) (err error) {
@@ -41,7 +42,7 @@ func InitializeNew(fileName, dir string) (err error) {
 			tx.CreateMap(dataPath)
 		}
 
-		err = runInit(tx, db)
+		err = runInit(tx, db, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("while running init.js: %w", err)
 		}

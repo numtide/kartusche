@@ -8,14 +8,16 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type DB struct {
-	db bolted.Database
-	vm *goja.Runtime
+	db     bolted.Database
+	vm     *goja.Runtime
+	logger *zap.SugaredLogger
 }
 
-func New(db bolted.Database, vm *goja.Runtime) *DB {
+func New(db bolted.Database, vm *goja.Runtime, logger *zap.SugaredLogger) *DB {
 	return &DB{db: db, vm: vm}
 }
 
@@ -143,7 +145,13 @@ func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (res interface
 		return nil, fmt.Errorf("while beginning write tx: %w", err)
 	}
 
+	wtxw := &WriteTxWrapper{WriteTx: tx, VM: db.vm}
+
+	db.vm.GlobalObject().Set("scheduleJob", ScheduleJob(wtxw))
+
 	defer func() {
+		db.vm.GlobalObject().Delete("scheduleJob")
+
 		p := recover()
 		if p != nil {
 			err = tx.Rollback()
@@ -171,7 +179,7 @@ func (db *DB) Write(f func(*WriteTxWrapper) (interface{}, error)) (res interface
 		}
 	}()
 
-	return f(&WriteTxWrapper{WriteTx: tx, VM: db.vm})
+	return f(wtxw)
 
 }
 

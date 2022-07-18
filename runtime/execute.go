@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	_ "embed"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/runtime/cronjobs"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
+	"github.com/draganm/kartusche/runtime/jobs"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/draganm/kartusche/runtime/stdlib"
 	"github.com/draganm/kartusche/runtime/template"
@@ -39,6 +42,8 @@ type runtime struct {
 	mu     *sync.Mutex
 	cron   *cron.Cron
 	logger *zap.SugaredLogger
+	ctx    context.Context
+	cancel func()
 }
 
 func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -72,7 +77,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 			return err
 		}
 
-		err = runInit(tx, r.db)
+		err = runInit(tx, r.db, r.logger)
 		if err != nil {
 			return fmt.Errorf("while running init.js: %w", err)
 		}
@@ -108,7 +113,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	return nil
 }
 
-func runInit(tx bolted.SugaredWriteTx, db bolted.Database) (err error) {
+func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger *zap.SugaredLogger) (err error) {
 	initPath := dbpath.ToPath("init.js")
 	ex := tx.Exists(initPath)
 
@@ -126,7 +131,7 @@ func runInit(tx bolted.SugaredWriteTx, db bolted.Database) (err error) {
 			return fmt.Errorf("while loading jslib: %w", err)
 		}
 
-		stdlib.SetStandardLibMethods(vm, lib, db)
+		stdlib.SetStandardLibMethods(vm, lib, db, logger)
 		vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: tx.GetRawWriteTX(), VM: vm})
 		vm.GlobalObject().Delete("read")
 		vm.GlobalObject().Delete("write")
@@ -181,8 +186,8 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 				r.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					vars := mux.Vars(r)
 					vm := goja.New()
-					stdlib.SetStandardLibMethods(vm, jslib, db)
-					dbw := dbwrapper.New(db, vm)
+					stdlib.SetStandardLibMethods(vm, jslib, db, logger)
+					dbw := dbwrapper.New(db, vm, logger)
 
 					vm.Set("vars", vars)
 					vm.Set("r", r)
@@ -307,6 +312,7 @@ func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 	var r *mux.Router
 
 	var cron *cron.Cron
+	ctx, cancel := context.WithCancel(context.Background())
 
 	err = bolted.SugaredRead(db, func(tx bolted.SugaredReadTx) error {
 
@@ -324,10 +330,15 @@ func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 		if err != nil {
 			return fmt.Errorf("while initializing cron: %w", err)
 		}
+
+		go jobs.JobScheduler(ctx, db, jslib, logger)
+		go jobs.CleanJobs(ctx, db, 1*time.Minute, 1*time.Minute, logger)
+
 		return err
 	})
 
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("while starting runtime: %w", err)
 	}
 
@@ -339,6 +350,8 @@ func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 		mu:     new(sync.Mutex),
 		logger: logger,
 		cron:   cron,
+		ctx:    ctx,
+		cancel: cancel,
 	}, nil
 
 }

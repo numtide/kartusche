@@ -107,6 +107,7 @@ var Command = &cli.Command{
 		s := &http.Server{
 			Handler: ks.ServerRouter,
 		}
+
 		serverAddr := c.String("controller-addr")
 		l, err := net.Listen("tcp", serverAddr)
 		if err != nil {
