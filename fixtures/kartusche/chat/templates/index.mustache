@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+    <script src="https://unpkg.com/htmx.org@1.7.0/dist/ext/json-enc.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <title>K-Chat</title>
+</head>
+
+<body>
+    <h1 class="text-xl font-bold">Welcome to Kartusche chat</h1>
+    <form hx-post="/join-chat" hx-ext='json-enc'>
+        <label for="username">What is your name?</label><br>
+        <input type="text" id="username" class="border-2" name="username"><br>
+        <button>Start chatting</button>
+    </form>    
+</body>
+
+</html>
