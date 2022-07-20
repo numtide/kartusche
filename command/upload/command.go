@@ -18,20 +18,7 @@ var Command = &cli.Command{
 	Name: "upload",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "kartusche-server-base-url",
-			EnvVars: []string{"KARTUSCHE_SERVER_BASE_URL"},
-		},
-		&cli.StringFlag{
 			Name: "name",
-		},
-		&cli.StringSliceFlag{
-			Name:    "hostname",
-			EnvVars: []string{"HOSTNAMES"},
-		},
-		&cli.StringFlag{
-			Name:    "prefix",
-			Value:   "/",
-			EnvVars: []string{"PREFIX"},
 		},
 	},
 	Action: func(c *cli.Context) (err error) {
@@ -66,7 +53,7 @@ var Command = &cli.Command{
 			return err
 		}
 
-		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
+		serverBaseURL, err := serverurl.BaseServerURL("")
 		if err != nil {
 			return err
 		}
