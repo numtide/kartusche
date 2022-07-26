@@ -70,7 +70,7 @@ func (s *Server) runtimeManager() (err error) {
 		s.mu.Unlock()
 
 		for _, k := range toAdd {
-			err = k.start()
+			err = k.start(s.log)
 			s.mu.Lock()
 			s.kartusches[k.name] = k
 			s.mu.Unlock()

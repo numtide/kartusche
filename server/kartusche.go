@@ -16,8 +16,8 @@ type kartusche struct {
 	path    string
 }
 
-func (k *kartusche) start() error {
-	rt, err := runtime.Open(k.path, zap.NewNop().Sugar())
+func (k *kartusche) start(logger *zap.SugaredLogger) error {
+	rt, err := runtime.Open(k.path, logger)
 	if err != nil {
 		k.Error = err.Error()
 		return fmt.Errorf("while starting: %w", err)
