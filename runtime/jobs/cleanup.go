@@ -53,6 +53,11 @@ func CleanJobs(ctx context.Context, db bolted.Database, interval, keepDuration t
 				},
 			}
 			for _, tc := range toClean {
+
+				if !tx.Exists(tc.path) {
+					continue
+				}
+
 				for it := tx.Iterator(tc.path); !it.IsDone(); it.Next() {
 					idString := it.GetKey()
 					id, err := uuid.FromString(idString)

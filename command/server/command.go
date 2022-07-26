@@ -66,7 +66,7 @@ var Command = &cli.Command{
 		lc.Sampling = nil
 		lc.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 		lc.DisableStacktrace = true
-		lc.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+		lc.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
 
 		logger, err := lc.Build()
 		if err != nil {
