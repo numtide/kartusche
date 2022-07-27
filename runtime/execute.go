@@ -34,6 +34,7 @@ type Runtime interface {
 	Shutdown() error
 	Update(func(tx bolted.SugaredWriteTx) error) error
 	Read(func(tx bolted.SugaredReadTx) error) error
+	GetDBStats() (*DBStats, error)
 }
 
 type runtime struct {
@@ -52,6 +53,36 @@ func (r *runtime) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.mu.Unlock()
 
 	rt.ServeHTTP(w, req)
+}
+
+func (r *runtime) GetDBStats() (*DBStats, error) {
+	dbs, err := r.db.Stats()
+	if err != nil {
+		return nil, fmt.Errorf("while getting dbstats: %w", err)
+	}
+
+	return &DBStats{
+		FreePageN:     dbs.FreePageN,
+		PendingPageN:  dbs.PendingPageN,
+		FreeAlloc:     dbs.FreeAlloc,
+		FreelistInuse: dbs.FreelistInuse,
+		TxN:           dbs.TxN,
+		OpenTxN:       dbs.OpenTxN,
+		TxStats: TxStats{
+			PageCount:     dbs.TxStats.PageCount,
+			PageAlloc:     dbs.TxStats.PageAlloc,
+			CursorCount:   dbs.TxStats.CursorCount,
+			NodeCount:     dbs.TxStats.NodeCount,
+			NodeDeref:     dbs.TxStats.NodeDeref,
+			Rebalance:     dbs.TxStats.Rebalance,
+			RebalanceTime: dbs.TxStats.RebalanceTime,
+			Split:         dbs.TxStats.Split,
+			Spill:         dbs.TxStats.Spill,
+			SpillTime:     dbs.TxStats.SpillTime,
+			Write:         dbs.TxStats.Write,
+			WriteTime:     dbs.TxStats.WriteTime,
+		},
+	}, nil
 }
 
 func (r *runtime) Shutdown() error {

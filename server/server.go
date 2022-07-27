@@ -128,6 +128,7 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	r.Methods("GET").Path("/kartusches").HandlerFunc(s.list)
 	r.Methods("GET").Path("/kartusches/{name}").HandlerFunc(s.tarDump)
 	r.Methods("GET").Path("/kartusches/{name}/info/handlers").HandlerFunc(s.infoHandlers)
+	r.Methods("GET").Path("/kartusches/{name}/info/dbstats").HandlerFunc(s.infoDBStats)
 	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
 	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
 
