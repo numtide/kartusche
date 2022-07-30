@@ -25,7 +25,7 @@ var defaultQueueRunning = JobQueuePath.Append("default", "running")
 var defaultQueueFailed = JobQueuePath.Append("default", "failed")
 var defaultQueueSucceeded = JobQueuePath.Append("default", "succeeded")
 
-func JobScheduler(ctx context.Context, db bolted.Database, libs *jslib.Libs, logger *zap.SugaredLogger) {
+func JobScheduler(ctx context.Context, db bolted.Database, maxHistorySize uint64, libs *jslib.Libs, logger *zap.SugaredLogger) {
 
 	logger.Debug("job scheduler started")
 	defer logger.Debug("job scheduler terminated")
@@ -63,7 +63,7 @@ func JobScheduler(ctx context.Context, db bolted.Database, libs *jslib.Libs, log
 					tx.CreateMap(jobRunningPath)
 					tx.Put(jobRunningPath.Append("name"), []byte(name))
 					tx.Put(jobRunningPath.Append("params"), params)
-					routinesToStart = append(routinesToStart, runJob(ctx, db, libs, id, name, params, logger))
+					routinesToStart = append(routinesToStart, runJob(ctx, db, maxHistorySize, libs, id, name, params, logger))
 					return nil
 				}
 				return nil
@@ -84,7 +84,7 @@ func JobScheduler(ctx context.Context, db bolted.Database, libs *jslib.Libs, log
 	}
 }
 
-func runJob(ctx context.Context, db bolted.Database, jslib *jslib.Libs, id, name string, params []byte, logger *zap.SugaredLogger) func() {
+func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jslib *jslib.Libs, id, name string, params []byte, logger *zap.SugaredLogger) func() {
 	logger = logger.With("jobId", id, "name", name)
 
 	return func() {
@@ -154,6 +154,8 @@ func runJob(ctx context.Context, db bolted.Database, jslib *jslib.Libs, id, name
 					tx.CreateMap(defaultQueueFailed)
 				}
 
+				trimToSize(tx, defaultQueueFailed, maxHistorySize-1)
+
 				tx.CreateMap(jobFailedPath)
 				tx.Put(jobFailedPath.Append("name"), []byte(name))
 				tx.Put(jobFailedPath.Append("params"), params)
@@ -175,6 +177,8 @@ func runJob(ctx context.Context, db bolted.Database, jslib *jslib.Libs, id, name
 				tx.CreateMap(defaultQueueSucceeded)
 			}
 
+			trimToSize(tx, defaultQueueSucceeded, maxHistorySize-1)
+
 			tx.CreateMap(jobSucceededPath)
 			tx.Put(jobSucceededPath.Append("name"), []byte(name))
 			tx.Put(jobSucceededPath.Append("params"), params)
@@ -185,4 +189,25 @@ func runJob(ctx context.Context, db bolted.Database, jslib *jslib.Libs, id, name
 		})
 
 	}
+}
+
+func trimToSize(tx bolted.SugaredWriteTx, mapPath dbpath.Path, maxSize uint64) {
+	currentSize := tx.Size(mapPath)
+	if currentSize <= maxSize {
+		return
+	}
+
+	toDelete := []dbpath.Path{}
+
+	it := tx.Iterator(mapPath)
+	for currentSize > maxSize && !it.IsDone() {
+		toDelete = append(toDelete, mapPath.Append(it.GetKey()))
+		currentSize--
+		it.Next()
+	}
+
+	for _, p := range toDelete {
+		tx.Delete(p)
+	}
+
 }

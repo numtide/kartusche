@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"time"
 
 	_ "embed"
 
@@ -28,6 +27,8 @@ import (
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
+
+const maxJobHistorySize = 100
 
 type Runtime interface {
 	http.Handler
@@ -362,8 +363,7 @@ func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
 			return fmt.Errorf("while initializing cron: %w", err)
 		}
 
-		go jobs.JobScheduler(ctx, db, jslib, logger)
-		go jobs.CleanJobs(ctx, db, 1*time.Minute, 1*time.Minute, logger)
+		go jobs.JobScheduler(ctx, db, maxJobHistorySize, jslib, logger)
 
 		return err
 	})
