@@ -18,7 +18,7 @@ import (
 
 func InitializeNew(fileName, dir string) (err error) {
 
-	db, err := embedded.Open(fileName, 0700)
+	db, err := embedded.Open(fileName, 0700, embedded.Options{})
 	if err != nil {
 		return fmt.Errorf("while opening database: %w", err)
 	}

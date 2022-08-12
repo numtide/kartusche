@@ -1,10 +1,8 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs ? import (import ./nix/sources.nix).nixpkgs { } }:
 pkgs.mkShell {
   packages = [
-    pkgs.elmPackages.elm
     pkgs.gcc
-    pkgs.go_1_18
-    pkgs.nodejs-16_x
+    pkgs.go_1_19
     pkgs.gotools
     pkgs.gopls
     pkgs.go-outline
@@ -19,3 +17,4 @@ pkgs.mkShell {
     pkgs.nixpkgs-fmt
   ];
 }
+

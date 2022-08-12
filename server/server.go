@@ -62,7 +62,7 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	}
 
 	dbPath := filepath.Join(path, "state")
-	db, err := embedded.Open(dbPath, 0700)
+	db, err := embedded.Open(dbPath, 0700, embedded.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("while opening state db: %w", err)
 	}

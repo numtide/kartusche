@@ -336,7 +336,7 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 }
 
 func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
-	db, err := embedded.Open(fileName, 0700)
+	db, err := embedded.Open(fileName, 0700, embedded.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("while opening database: %w", err)
 	}
