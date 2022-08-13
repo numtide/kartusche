@@ -1,5 +1,11 @@
 name: Go Tests
-on: [push, pull_request]
+
+on:
+  # Run one or the other
+  push:
+    branches: [ master ]
+  pull_request: {}
+
 jobs:
   test:
     name: Test
