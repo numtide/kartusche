@@ -38,6 +38,10 @@ func Request(method, url string, options Options) (*Response, error) {
 		return nil, fmt.Errorf("while creating new request: %w", err)
 	}
 
+	if options.Json {
+		req.Header.Set("content-type", "application/json")
+	}
+
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("while performing request: %w", err)

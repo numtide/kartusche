@@ -177,7 +177,7 @@ func (m *githubProvider) Callback(w http.ResponseWriter, r *http.Request) (ar *A
 
 	authError := tq.Get("error")
 	if authError != "" {
-		return nil, fmt.Errorf("auth error: %s", err)
+		return nil, fmt.Errorf("auth error: %s", authError)
 	}
 
 	tkn := tq.Get("access_token")
