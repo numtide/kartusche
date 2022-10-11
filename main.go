@@ -7,6 +7,7 @@ import (
 	"github.com/draganm/kartusche/command/info"
 	initCmd "github.com/draganm/kartusche/command/init"
 	"github.com/draganm/kartusche/command/ls"
+	"github.com/draganm/kartusche/command/remote"
 	"github.com/draganm/kartusche/command/rm"
 	"github.com/draganm/kartusche/command/server"
 	"github.com/draganm/kartusche/command/test"
@@ -30,6 +31,7 @@ func main() {
 			auth.Command,
 			clone.Command,
 			info.Command,
+			remote.Command,
 		},
 	}
 	app.RunAndExitOnError()

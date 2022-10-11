@@ -128,3 +128,32 @@ func (c *Config) Write(dir string) (err error) {
 
 	return nil
 }
+
+func Update(dir string, updateFunc func(*Config) error) error {
+	configDir := filepath.Join(dir, ".kartusche", "config.yaml")
+
+	c, err := loadConfig(configDir)
+	if err == ErrConfigNotFound {
+		absPath, err := filepath.Abs(dir)
+		if err != nil {
+			return fmt.Errorf("could not expand path %s: %w", dir, err)
+		}
+		c = &Config{
+			Name: filepath.Base(absPath),
+		}
+	} else if err != nil {
+		return fmt.Errorf("could not load existing config: %w", err)
+	}
+
+	if c.Remotes == nil {
+		c.Remotes = map[string]string{}
+	}
+
+	err = updateFunc(c)
+
+	if err != nil {
+		return fmt.Errorf("could not update config: %w", err)
+	}
+
+	return c.Write(dir)
+}
