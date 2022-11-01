@@ -25,7 +25,7 @@ var Command = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "addr",
-			EnvVars: []string{"ADDR"},
+			EnvVars: []string{"KARTUSCHE_ADDR"},
 			Value:   ":5001",
 		},
 	},
