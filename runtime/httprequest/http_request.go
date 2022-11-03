@@ -79,6 +79,10 @@ func Request(method, url string, options Options) (*Response, error) {
 func hasContentType(r *http.Response, mt string) (bool, error) {
 	ct := r.Header.Get("Content-type")
 
+	if ct == "" {
+		return false, nil
+	}
+
 	cmt, _, err := mime.ParseMediaType(ct)
 	if err != nil {
 		return false, fmt.Errorf("while checking for %s content type: %w", mt, err)
