@@ -3,5 +3,5 @@ pkgs.buildGo119Module {
   pname = "kartusche";
   version = pkgs.lib.fileContents ./version.txt;
   src = ./.;
-  vendorSha256 = "sha256-H2BvWn4F7gCmkXBZVJdC2t65OPc2w7cyogP69xbB/Yo=";
+  vendorSha256 = "sha256-k+Qwuw2bsE7ttoEAul6LEyi9mNIeK+kTJWUjLbmW88k=";
 }
