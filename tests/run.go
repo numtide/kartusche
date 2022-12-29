@@ -41,6 +41,13 @@ func nArgFuncType(n int) reflect.Type {
 }
 
 func Run(dir string) error {
+
+	_, err := os.Stat(filepath.Join(dir, "tests"))
+
+	if os.IsNotExist(err) {
+		return nil
+	}
+
 	programs := []*goja.Program{}
 	ps, err := goja.Compile(`step.js`, `
 		function step(matcher, fn) {

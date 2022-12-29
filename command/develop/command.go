@@ -26,7 +26,7 @@ var Command = &cli.Command{
 		&cli.StringFlag{
 			Name:    "addr",
 			EnvVars: []string{"KARTUSCHE_ADDR"},
-			Value:   ":5001",
+			Value:   "localhost:5001",
 		},
 	},
 	Action: func(c *cli.Context) (err error) {
@@ -67,6 +67,8 @@ var Command = &cli.Command{
 		if err != nil {
 			return fmt.Errorf("while creating listener: %w", err)
 		}
+
+		dl.Sugar().With("url", fmt.Sprintf("http://%s/", l.Addr().String())).Info("listening for HTTP requests")
 
 		rt, err := runtime.Open(".kartusche/development", dl.Sugar())
 		if err != nil {
