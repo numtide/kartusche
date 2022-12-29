@@ -163,7 +163,7 @@ func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger *zap.SugaredLo
 			return fmt.Errorf("while loading jslib: %w", err)
 		}
 
-		stdlib.SetStandardLibMethods(vm, lib, db, logger)
+		stdlib.SetStandardLibMethods(vm, lib, db, dbpath.ToPath(), logger)
 		vm.Set("tx", &dbwrapper.WriteTxWrapper{WriteTx: tx.GetRawWriteTX(), VM: vm})
 		vm.GlobalObject().Delete("read")
 		vm.GlobalObject().Delete("write")
@@ -218,13 +218,13 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 				r.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					vars := mux.Vars(r)
 					vm := goja.New()
-					stdlib.SetStandardLibMethods(vm, jslib, db, logger)
+					stdlib.SetStandardLibMethods(vm, jslib, db, current, logger)
 					dbw := dbwrapper.New(db, vm, logger)
 
 					vm.Set("vars", vars)
 					vm.Set("r", r)
 					vm.Set("w", w)
-					vm.Set("render_template", template.RenderTemplate(db, w))
+					vm.Set("render_template", template.RenderTemplate(db, current, w))
 					vm.Set("watch", func(path []string, fn func(interface{}) (bool, error)) selectable {
 						os, _ := dbw.Watch(path, fn)
 						return os

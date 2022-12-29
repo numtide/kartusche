@@ -89,7 +89,7 @@ func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jsli
 
 	return func() {
 		vm := goja.New()
-		stdlib.SetStandardLibMethods(vm, jslib, db, logger)
+		stdlib.SetStandardLibMethods(vm, jslib, db, JobsDefinitionsPath, logger)
 
 		var err error
 

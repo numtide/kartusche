@@ -63,7 +63,7 @@ func CreateCron(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, 
 		cr.AddFunc(matches[2], func() {
 
 			vm := goja.New()
-			stdlib.SetStandardLibMethods(vm, jslib, db, logger)
+			stdlib.SetStandardLibMethods(vm, jslib, db, cronjobsPath, logger)
 			_, err = vm.RunProgram(prg)
 			if err != nil {
 				logger.With("error", err, "cron", it.GetKey()).Error("failed to execute cron")
