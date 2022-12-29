@@ -54,6 +54,28 @@ func InitializeNew(fileName, dir string) (err error) {
 	return nil
 }
 
+func InitializeEmpty(fileName string) error {
+	db, err := embedded.Open(fileName, 0700, embedded.Options{})
+	if err != nil {
+		return fmt.Errorf("while opening database: %w", err)
+	}
+	defer db.Close()
+
+	return bolted.SugaredWrite(db, func(tx bolted.SugaredWriteTx) error {
+
+		dataPath := dbpath.ToPath("data")
+		ex := tx.Exists(dataPath)
+
+		if !ex {
+			tx.CreateMap(dataPath)
+		}
+
+		return nil
+
+	})
+
+}
+
 func loadFromPath(dir string, wtx bolted.SugaredWriteTx, prefix dbpath.Path) error {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
