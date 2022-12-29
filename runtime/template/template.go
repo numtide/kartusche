@@ -13,29 +13,38 @@ import (
 var basePath = dbpath.ToPath("templates")
 
 type partialsProvider struct {
-	db bolted.Database
+	db          bolted.Database
+	currentPath dbpath.Path
 }
 
 func (pp *partialsProvider) Get(name string) (string, error) {
 	parts := strings.Split(name, "/")
+
 	dbp := basePath.Append(parts...)
-	rtx, err := pp.db.BeginRead()
+
+	var templateData []byte
+
+	err := bolted.SugaredRead(pp.db, func(tx bolted.SugaredReadTx) error {
+		if len(parts) == 1 && tx.Exists(pp.currentPath.Append(parts...)) {
+			templateData = tx.Get(pp.currentPath.Append(parts...))
+			return nil
+		}
+		if tx.Exists(dbp) {
+			templateData = tx.Get(dbp)
+			return nil
+		}
+		return fmt.Errorf("could not find template %s", name)
+	})
+
 	if err != nil {
-		return "", fmt.Errorf("while starting read tx: %w", err)
+		return "", fmt.Errorf("could not read template: %w", err)
 	}
 
-	defer rtx.Finish()
-
-	td, err := rtx.Get(dbp)
-	if err != nil {
-		return "", fmt.Errorf("while reading template: %w", err)
-	}
-
-	return string(td), nil
+	return string(templateData), nil
 
 }
 
-func RenderTemplate(db bolted.Database, w io.Writer) func(name string, data interface{}) error {
+func RenderTemplate(db bolted.Database, currentPath dbpath.Path, w io.Writer) func(name string, data interface{}) error {
 
 	return func(name string, data interface{}) error {
 
@@ -43,7 +52,7 @@ func RenderTemplate(db bolted.Database, w io.Writer) func(name string, data inte
 			data = map[string]interface{}{}
 		}
 
-		pp := &partialsProvider{db: db}
+		pp := &partialsProvider{db: db, currentPath: currentPath}
 		pd, err := pp.Get(name)
 		if err != nil {
 			return err
@@ -58,7 +67,7 @@ func RenderTemplate(db bolted.Database, w io.Writer) func(name string, data inte
 
 }
 
-func RenderTemplateToString(db bolted.Database) func(name string, data interface{}) (string, error) {
+func RenderTemplateToString(db bolted.Database, currentPath dbpath.Path) func(name string, data interface{}) (string, error) {
 
 	return func(name string, data interface{}) (s string, err error) {
 
@@ -66,7 +75,7 @@ func RenderTemplateToString(db bolted.Database) func(name string, data interface
 			data = map[string]interface{}{}
 		}
 
-		pp := &partialsProvider{db: db}
+		pp := &partialsProvider{db: db, currentPath: currentPath}
 		pd, err := pp.Get(name)
 		if err != nil {
 			return "", err

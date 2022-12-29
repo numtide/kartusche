@@ -6,6 +6,7 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
+	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime/dbwrapper"
 	"github.com/draganm/kartusche/runtime/httprequest"
 	"github.com/draganm/kartusche/runtime/jslib"
@@ -14,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Database, logger *zap.SugaredLogger) {
+func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Database, handlerParentPath dbpath.Path, logger *zap.SugaredLogger) {
 	dbw := dbwrapper.New(db, vm, logger)
 	vm.SetFieldNameMapper(newSmartCapFieldNameMapper())
 	vm.Set("require", jslib.Require(vm))
@@ -22,7 +23,7 @@ func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Databa
 	vm.Set("read", dbw.Read)
 	vm.Set("write", dbw.Write)
 	vm.Set("http_do", httprequest.Request)
-	vm.Set("render_template_to_s", template.RenderTemplateToString(db))
+	vm.Set("render_template_to_s", template.RenderTemplateToString(db, handlerParentPath))
 	vm.Set("pathEscape", url.PathEscape)
 	vm.Set("pathUnescape", url.PathUnescape)
 	vm.Set("queryEscape", url.QueryEscape)
