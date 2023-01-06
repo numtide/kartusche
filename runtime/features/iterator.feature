@@ -17,3 +17,9 @@ Feature: iterator
         And the map has two elements
         When I iterate over the map
         Then the result should contain both elements
+
+    Scenario: iterating over map with two elements with seek
+        Given an existing map
+        And the map has two elements
+        When I iterate over the map seeking to the second element
+        Then the result should contain only the second element

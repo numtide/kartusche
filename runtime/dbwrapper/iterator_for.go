@@ -8,11 +8,15 @@ import (
 	"github.com/draganm/bolted/dbpath"
 )
 
-func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime, path []string) (*goja.Object, error) {
+func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime, path []string, seek string) (*goja.Object, error) {
 
 	it, err := ig(dataPath.Append(path...))
 	if err != nil {
 		return nil, fmt.Errorf("while creating iterator: %w", err)
+	}
+
+	if seek != "" {
+		it.Seek(seek)
 	}
 
 	type iterResult struct {

@@ -130,6 +130,8 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the result should contain the element$`, theResultShouldContainTheElement)
 	ctx.Step(`^the map has two elements$`, theMapHasTwoElements)
 	ctx.Step(`^the result should contain both elements$`, theResultShouldContainBothElements)
+	ctx.Step(`^I iterate over the map seeking to the second element$`, iIterateOverTheMapSeekingToTheSecondElement)
+	ctx.Step(`^the result should contain only the second element$`, theResultShouldContainOnlyTheSecondElement)
 
 }
 
@@ -236,6 +238,34 @@ func theResultShouldContainBothElements(ctx context.Context) error {
 
 	if s.lastResponse != `["a","b"]` {
 		return fmt.Errorf(`unexpected response %s (expected ["a","b"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iIterateOverTheMapSeekingToTheSecondElement(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m'],'b'), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainOnlyTheSecondElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["b"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["b"])`, s.lastResponse)
 	}
 	return nil
 }
