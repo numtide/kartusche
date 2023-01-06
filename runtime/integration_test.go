@@ -126,6 +126,10 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an existing map$`, anExistingMap)
 	ctx.Step(`^I iterate over the map$`, iIterateOverTheMap)
 	ctx.Step(`^the result should be empty array$`, theResultShouldBeEmptyArray)
+	ctx.Step(`^the map has one element$`, theMapHasOneElement)
+	ctx.Step(`^the result should contain the element$`, theResultShouldContainTheElement)
+	ctx.Step(`^the map has two elements$`, theMapHasTwoElements)
+	ctx.Step(`^the result should contain both elements$`, theResultShouldContainBothElements)
 
 }
 
@@ -191,6 +195,47 @@ func theResultShouldBeEmptyArray(ctx context.Context) error {
 
 	if s.lastResponse != "[]" {
 		return fmt.Errorf("unexpected response %s (expected [])", s.lastResponse)
+	}
+	return nil
+}
+
+func theMapHasOneElement(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.Put(dbpath.ToPath("data", "m", "a"), []byte{})
+		return nil
+	})
+}
+
+func theResultShouldContainTheElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func theMapHasTwoElements(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.Put(dbpath.ToPath("data", "m", "a"), []byte{})
+		tx.Put(dbpath.ToPath("data", "m", "b"), []byte{})
+		return nil
+	})
+}
+
+func theResultShouldContainBothElements(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a","b"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a","b"])`, s.lastResponse)
 	}
 	return nil
 }
