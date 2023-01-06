@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
+	"github.com/draganm/bolted"
+	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime/testrig"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
@@ -28,6 +30,7 @@ var opts = godog.Options{
 	Output:        os.Stdout,
 	StopOnFailure: true,
 	Strict:        true,
+	Format:        "progress",
 	Paths:         []string{"features"},
 	NoColors:      true,
 }
@@ -120,6 +123,10 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a kartusche with a root get handler$`, aKartuscheWithARootGetHandler)
 	ctx.Step(`^the kartusche receives GET request$`, theKartuscheReceivesGETRequest)
 	ctx.Step(`^the kartusche should respond with (\d+) status code$`, theKartuscheShouldRespondWithStatusCode)
+	ctx.Step(`^an existing map$`, anExistingMap)
+	ctx.Step(`^I iterate over the map$`, iIterateOverTheMap)
+	ctx.Step(`^the result should be empty array$`, theResultShouldBeEmptyArray)
+
 }
 
 func getState(ctx context.Context) *State {
@@ -148,5 +155,42 @@ func theKartuscheShouldRespondWithStatusCode(ctx context.Context, expectedStatus
 		return fmt.Errorf("expected status code %d but got %d: %s", expectedStatusCode, s.lastStatusCode, s.lastResponse)
 	}
 
+	return nil
+}
+
+func anExistingMap(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.CreateMap(dbpath.ToPath("data", "m"))
+		return nil
+	})
+
+}
+
+func iIterateOverTheMap(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m']), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldBeEmptyArray(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != "[]" {
+		return fmt.Errorf("unexpected response %s (expected [])", s.lastResponse)
+	}
 	return nil
 }
