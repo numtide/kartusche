@@ -76,6 +76,10 @@ func (rtw *readTxWrapper) IteratorFor(path []string, seek string) (*goja.Object,
 	return iteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek)
 }
 
+func (rtw *readTxWrapper) ReverseIteratorFor(path []string, seek string) (*goja.Object, error) {
+	return reverseIteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek)
+}
+
 type WriteTxWrapper struct {
 	VM *goja.Runtime
 	bolted.WriteTx
@@ -102,6 +106,9 @@ func (wtw *WriteTxWrapper) IteratorFor(path []string, seek string) (*goja.Object
 	return iteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek)
 }
 
+func (wtw *WriteTxWrapper) ReverseIteratorFor(path []string, seek string) (*goja.Object, error) {
+	return reverseIteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek)
+}
 func (wtw *WriteTxWrapper) Exists(path []string) (bool, error) {
 	return wtw.WriteTx.Exists(dataPath.Append(path...))
 }

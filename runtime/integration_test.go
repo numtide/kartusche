@@ -132,7 +132,8 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the result should contain both elements$`, theResultShouldContainBothElements)
 	ctx.Step(`^I iterate over the map seeking to the second element$`, iIterateOverTheMapSeekingToTheSecondElement)
 	ctx.Step(`^the result should contain only the second element$`, theResultShouldContainOnlyTheSecondElement)
-
+	ctx.Step(`^I reverse iterate over the map$`, iReverseIterateOverTheMap)
+	ctx.Step(`^the result should contain both elements in reverse order$`, theResultShouldContainBothElementsInReverseOrder)
 }
 
 func getState(ctx context.Context) *State {
@@ -266,6 +267,34 @@ func theResultShouldContainOnlyTheSecondElement(ctx context.Context) error {
 
 	if s.lastResponse != `["b"]` {
 		return fmt.Errorf(`unexpected response %s (expected ["b"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iReverseIterateOverTheMap(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.reverseIteratorFor(['m']), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainBothElementsInReverseOrder(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["b","a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["b","a"])`, s.lastResponse)
 	}
 	return nil
 }
