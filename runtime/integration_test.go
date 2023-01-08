@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -33,6 +34,7 @@ var opts = godog.Options{
 	Format:        "progress",
 	Paths:         []string{"features"},
 	NoColors:      true,
+	Concurrency:   runtime.NumCPU() * 2,
 }
 
 func init() {
@@ -134,6 +136,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the result should contain only the second element$`, theResultShouldContainOnlyTheSecondElement)
 	ctx.Step(`^I reverse iterate over the map$`, iReverseIterateOverTheMap)
 	ctx.Step(`^the result should contain both elements in reverse order$`, theResultShouldContainBothElementsInReverseOrder)
+	ctx.Step(`^I iterate over the map with limit (\d+)$`, iIterateOverTheMapWithLimit)
+	ctx.Step(`^the result should contain only the first element$`, theResultShouldContainOnlyTheFirstElement)
+	ctx.Step(`^I reverse iterate over the map with limit (\d+)$`, iReverseIterateOverTheMapWithLimit)
 }
 
 func getState(ctx context.Context) *State {
@@ -296,5 +301,49 @@ func theResultShouldContainBothElementsInReverseOrder(ctx context.Context) error
 	if s.lastResponse != `["b","a"]` {
 		return fmt.Errorf(`unexpected response %s (expected ["b","a"])`, s.lastResponse)
 	}
+	return nil
+}
+
+func iIterateOverTheMapWithLimit(ctx context.Context, limit int) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", fmt.Sprintf(`
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m'],'',%d), ([key]) => key))))
+	`, limit))
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainOnlyTheFirstElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iReverseIterateOverTheMapWithLimit(ctx context.Context, limit int) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", fmt.Sprintf(`
+		w.write(JSON.stringify(read(tx => Array.from(tx.reverseIteratorFor(['m'],'',%d), ([key]) => key))))
+	`, limit))
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

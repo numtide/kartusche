@@ -8,7 +8,7 @@ import (
 	"github.com/draganm/bolted/dbpath"
 )
 
-func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime, path []string, seek string) (*goja.Object, error) {
+func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime, path []string, seek string, limit int) (*goja.Object, error) {
 
 	it, err := ig(dataPath.Append(path...))
 	if err != nil {
@@ -30,7 +30,14 @@ func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime
 	o := vm.NewObject()
 	o.SetSymbol(goja.SymIterator, func() (*goja.Object, error) {
 		iter := vm.NewObject()
+		count := 0
 		iter.Set("next", func() (*iterResult, error) {
+
+			if limit > 0 && count >= limit {
+				return &iterResult{
+					Done: true,
+				}, nil
+			}
 
 			done, err := it.IsDone()
 			if err != nil {
@@ -57,6 +64,8 @@ func iteratorFor(ig func(dbpath.Path) (bolted.Iterator, error), vm *goja.Runtime
 			if err != nil {
 				return nil, fmt.Errorf("getting next from iterator: %w", err)
 			}
+
+			count++
 
 			return &iterResult{
 				Value: vm.ToValue([]string{key, string(value)}),

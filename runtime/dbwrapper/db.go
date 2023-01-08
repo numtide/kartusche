@@ -72,12 +72,12 @@ func (rtw *readTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 	return &iteratorWrapper{Iterator: it}, nil
 }
 
-func (rtw *readTxWrapper) IteratorFor(path []string, seek string) (*goja.Object, error) {
-	return iteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek)
+func (rtw *readTxWrapper) IteratorFor(path []string, seek string, limit int) (*goja.Object, error) {
+	return iteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek, limit)
 }
 
-func (rtw *readTxWrapper) ReverseIteratorFor(path []string, seek string) (*goja.Object, error) {
-	return reverseIteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek)
+func (rtw *readTxWrapper) ReverseIteratorFor(path []string, seek string, limit int) (*goja.Object, error) {
+	return reverseIteratorFor(rtw.ReadTx.Iterator, rtw.VM, path, seek, limit)
 }
 
 type WriteTxWrapper struct {
@@ -102,12 +102,12 @@ func (wtw *WriteTxWrapper) Iterator(path []string) (*iteratorWrapper, error) {
 	return &iteratorWrapper{Iterator: it}, nil
 }
 
-func (wtw *WriteTxWrapper) IteratorFor(path []string, seek string) (*goja.Object, error) {
-	return iteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek)
+func (wtw *WriteTxWrapper) IteratorFor(path []string, seek string, limit int) (*goja.Object, error) {
+	return iteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek, limit)
 }
 
-func (wtw *WriteTxWrapper) ReverseIteratorFor(path []string, seek string) (*goja.Object, error) {
-	return reverseIteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek)
+func (wtw *WriteTxWrapper) ReverseIteratorFor(path []string, seek string, limit int) (*goja.Object, error) {
+	return reverseIteratorFor(wtw.WriteTx.Iterator, wtw.VM, path, seek, limit)
 }
 func (wtw *WriteTxWrapper) Exists(path []string) (bool, error) {
 	return wtw.WriteTx.Exists(dataPath.Append(path...))

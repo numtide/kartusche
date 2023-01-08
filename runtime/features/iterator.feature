@@ -18,6 +18,12 @@ Feature: iterator
         When I iterate over the map
         Then the result should contain both elements
 
+    Scenario: limited iterating over map with two elements
+        Given an existing map
+        And the map has two elements
+        When I iterate over the map with limit 1
+        Then the result should contain only the first element
+
     Scenario: iterating over map with two elements with seek
         Given an existing map
         And the map has two elements
@@ -29,3 +35,10 @@ Feature: iterator
         And the map has two elements
         When I reverse iterate over the map
         Then the result should contain both elements in reverse order
+
+
+    Scenario: lomited reverse iterating over map with two elements
+        Given an existing map
+        And the map has two elements
+        When I reverse iterate over the map with limit 1
+        Then the result should contain only the second element
