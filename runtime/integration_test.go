@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/cucumber/godog"
+	"github.com/draganm/bolted"
+	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime/testrig"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
@@ -28,8 +31,10 @@ var opts = godog.Options{
 	Output:        os.Stdout,
 	StopOnFailure: true,
 	Strict:        true,
+	Format:        "progress",
 	Paths:         []string{"features"},
 	NoColors:      true,
+	Concurrency:   runtime.NumCPU() * 2,
 }
 
 func init() {
@@ -120,6 +125,20 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a kartusche with a root get handler$`, aKartuscheWithARootGetHandler)
 	ctx.Step(`^the kartusche receives GET request$`, theKartuscheReceivesGETRequest)
 	ctx.Step(`^the kartusche should respond with (\d+) status code$`, theKartuscheShouldRespondWithStatusCode)
+	ctx.Step(`^an existing map$`, anExistingMap)
+	ctx.Step(`^I iterate over the map$`, iIterateOverTheMap)
+	ctx.Step(`^the result should be empty array$`, theResultShouldBeEmptyArray)
+	ctx.Step(`^the map has one element$`, theMapHasOneElement)
+	ctx.Step(`^the result should contain the element$`, theResultShouldContainTheElement)
+	ctx.Step(`^the map has two elements$`, theMapHasTwoElements)
+	ctx.Step(`^the result should contain both elements$`, theResultShouldContainBothElements)
+	ctx.Step(`^I iterate over the map seeking to the second element$`, iIterateOverTheMapSeekingToTheSecondElement)
+	ctx.Step(`^the result should contain only the second element$`, theResultShouldContainOnlyTheSecondElement)
+	ctx.Step(`^I reverse iterate over the map$`, iReverseIterateOverTheMap)
+	ctx.Step(`^the result should contain both elements in reverse order$`, theResultShouldContainBothElementsInReverseOrder)
+	ctx.Step(`^I iterate over the map with limit (\d+)$`, iIterateOverTheMapWithLimit)
+	ctx.Step(`^the result should contain only the first element$`, theResultShouldContainOnlyTheFirstElement)
+	ctx.Step(`^I reverse iterate over the map with limit (\d+)$`, iReverseIterateOverTheMapWithLimit)
 }
 
 func getState(ctx context.Context) *State {
@@ -146,6 +165,184 @@ func theKartuscheShouldRespondWithStatusCode(ctx context.Context, expectedStatus
 
 	if s.lastStatusCode != expectedStatusCode {
 		return fmt.Errorf("expected status code %d but got %d: %s", expectedStatusCode, s.lastStatusCode, s.lastResponse)
+	}
+
+	return nil
+}
+
+func anExistingMap(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.CreateMap(dbpath.ToPath("data", "m"))
+		return nil
+	})
+
+}
+
+func iIterateOverTheMap(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m']), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldBeEmptyArray(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != "[]" {
+		return fmt.Errorf("unexpected response %s (expected [])", s.lastResponse)
+	}
+	return nil
+}
+
+func theMapHasOneElement(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.Put(dbpath.ToPath("data", "m", "a"), []byte{})
+		return nil
+	})
+}
+
+func theResultShouldContainTheElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func theMapHasTwoElements(ctx context.Context) error {
+	s := getState(ctx)
+	return s.ti.GetRuntime().Update(func(tx bolted.SugaredWriteTx) error {
+		tx.Put(dbpath.ToPath("data", "m", "a"), []byte{})
+		tx.Put(dbpath.ToPath("data", "m", "b"), []byte{})
+		return nil
+	})
+}
+
+func theResultShouldContainBothElements(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a","b"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a","b"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iIterateOverTheMapSeekingToTheSecondElement(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m'],'b'), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainOnlyTheSecondElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["b"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["b"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iReverseIterateOverTheMap(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(read(tx => Array.from(tx.reverseIteratorFor(['m']), ([key]) => key))))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainBothElementsInReverseOrder(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["b","a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["b","a"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iIterateOverTheMapWithLimit(ctx context.Context, limit int) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", fmt.Sprintf(`
+		w.write(JSON.stringify(read(tx => Array.from(tx.iteratorFor(['m'],'',%d), ([key]) => key))))
+	`, limit))
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldContainOnlyTheFirstElement(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse != `["a"]` {
+		return fmt.Errorf(`unexpected response %s (expected ["a"])`, s.lastResponse)
+	}
+	return nil
+}
+
+func iReverseIterateOverTheMapWithLimit(ctx context.Context, limit int) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", fmt.Sprintf(`
+		w.write(JSON.stringify(read(tx => Array.from(tx.reverseIteratorFor(['m'],'',%d), ([key]) => key))))
+	`, limit))
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
 	}
 
 	return nil
