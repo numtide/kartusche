@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"runtime"
 	"testing"
 
@@ -139,6 +140,11 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I iterate over the map with limit (\d+)$`, iIterateOverTheMapWithLimit)
 	ctx.Step(`^the result should contain only the first element$`, theResultShouldContainOnlyTheFirstElement)
 	ctx.Step(`^I reverse iterate over the map with limit (\d+)$`, iReverseIterateOverTheMapWithLimit)
+	ctx.Step(`^generated UUID should not be an empty string$`, generatedUUIDShouldNotBeAnEmptyString)
+	ctx.Step(`^when I generate a v6 UUID$`, whenIGenerateAVUUID)
+	ctx.Step(`^the result should be a Date$`, theResultShouldBeADate)
+	ctx.Step(`^when I generate and parse a v6 UUID$`, whenIGenerateAndParseAVUUID)
+
 }
 
 func getState(ctx context.Context) *State {
@@ -343,6 +349,69 @@ func iReverseIterateOverTheMapWithLimit(ctx context.Context, limit int) error {
 	s.lastStatusCode, s.lastResponse, err = s.get("/")
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func whenIGenerateAVUUID(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(uuidv6())
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generatedUUIDShouldNotBeAnEmptyString(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	if s.lastResponse == "" {
+		return fmt.Errorf("expected non-empty response")
+	}
+	return nil
+}
+
+func whenIGenerateAndParseAVUUID(ctx context.Context) error {
+	s := getState(ctx)
+	err := s.ti.AddContent("handler/GET.js", `
+		w.write(JSON.stringify(parseV6Timestamp(uuidv6())))
+	`)
+	if err != nil {
+		return err
+	}
+	s.lastStatusCode, s.lastResponse, err = s.get("/")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func theResultShouldBeADate(ctx context.Context) error {
+	s := getState(ctx)
+	if s.lastStatusCode != 200 {
+		return fmt.Errorf("unexpected status code %d", s.lastStatusCode)
+	}
+
+	matched, err := regexp.MatchString("^\\d+$", s.lastResponse)
+
+	if err != nil {
+		return fmt.Errorf("error while matching: %w", err)
+	}
+
+	if !matched {
+		return fmt.Errorf("%s is not a timestamp", s.lastResponse)
 	}
 
 	return nil
