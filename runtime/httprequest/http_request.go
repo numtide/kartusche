@@ -16,7 +16,7 @@ type Response struct {
 }
 
 type Options struct {
-	// Headers map[string]string
+	Header http.Header
 	// Query   map[string]string
 	Body interface{}
 	Json bool
@@ -36,6 +36,12 @@ func Request(method, url string, options Options) (*Response, error) {
 	req, err := http.NewRequest(method, url, bb)
 	if err != nil {
 		return nil, fmt.Errorf("while creating new request: %w", err)
+	}
+
+	if options.Header != nil {
+		for k, vals := range options.Header {
+			req.Header[k] = vals
+		}
 	}
 
 	if options.Json {
