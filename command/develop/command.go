@@ -16,6 +16,7 @@ import (
 	"github.com/draganm/kartusche/runtime"
 	"github.com/draganm/kartusche/tests"
 	"github.com/fsnotify/fsnotify"
+	"github.com/go-logr/zapr"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
@@ -43,6 +44,8 @@ var Command = &cli.Command{
 
 		defer dl.Sync()
 
+		log := zapr.NewLogger(dl)
+
 		dir := "."
 
 		_, err = os.Stat(".kartusche")
@@ -68,9 +71,9 @@ var Command = &cli.Command{
 			return fmt.Errorf("while creating listener: %w", err)
 		}
 
-		dl.Sugar().With("url", fmt.Sprintf("http://%s/", l.Addr().String())).Info("listening for HTTP requests")
+		log.Info("listening for HTTP requests", "url", fmt.Sprintf("http://%s/", l.Addr().String()))
 
-		rt, err := runtime.Open(".kartusche/development", dl.Sugar())
+		rt, err := runtime.Open(".kartusche/development", log)
 		if err != nil {
 			return fmt.Errorf("while starting runtime: %w", err)
 		}

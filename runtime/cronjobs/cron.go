@@ -10,16 +10,15 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/draganm/kartusche/runtime/stdlib"
-	"github.com/go-logr/zapr"
+	"github.com/go-logr/logr"
 	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
 )
 
 var cronjobsPath = dbpath.ToPath("cronjobs")
 var scheduleRegExp = regexp.MustCompile(`^\s*(#|\/\/)\s+(.+)$`)
 
-func CreateCron(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger *zap.SugaredLogger) (*cron.Cron, error) {
-	cronLogger := zapr.NewLogger(logger.Desugar())
+func CreateCron(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger logr.Logger) (*cron.Cron, error) {
+
 	cr := cron.New(
 		// cron.WithLogger(cronLogger),
 		cron.WithSeconds(),
@@ -29,7 +28,7 @@ func CreateCron(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, 
 			),
 		),
 		cron.WithChain(
-			cron.Recover(cronLogger),
+			cron.Recover(logger),
 		),
 	)
 
@@ -66,7 +65,7 @@ func CreateCron(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, 
 			stdlib.SetStandardLibMethods(vm, jslib, db, cronjobsPath, logger)
 			_, err = vm.RunProgram(prg)
 			if err != nil {
-				logger.With("error", err, "cron", it.GetKey()).Error("failed to execute cron")
+				logger.Error(err, "failed to execute cron", "cron", it.GetKey())
 			}
 		})
 	}

@@ -11,11 +11,11 @@ import (
 	"github.com/draganm/kartusche/runtime/httprequest"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/draganm/kartusche/runtime/template"
+	"github.com/go-logr/logr"
 	"github.com/gofrs/uuid"
-	"go.uber.org/zap"
 )
 
-func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Database, handlerParentPath dbpath.Path, logger *zap.SugaredLogger) {
+func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Database, handlerParentPath dbpath.Path, logger logr.Logger) {
 	dbw := dbwrapper.New(db, vm, logger)
 	vm.SetFieldNameMapper(newSmartCapFieldNameMapper())
 	vm.Set("require", jslib.Require(vm))

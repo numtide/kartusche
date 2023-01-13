@@ -11,7 +11,7 @@ import (
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 )
 
 type TestKartuscheInstance interface {
@@ -73,7 +73,7 @@ func StartTestKartuscheInstance(ctx context.Context) (TestKartuscheInstance, err
 		return nil, fmt.Errorf("could not initialize empty kartusche: %w", err)
 	}
 
-	rt, err := runtime.Open(dbpath, zap.NewNop().Sugar())
+	rt, err := runtime.Open(dbpath, logr.Discard())
 	if err != nil {
 		return nil, fmt.Errorf("could not open new runtime: %w", err)
 	}

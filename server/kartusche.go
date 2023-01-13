@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/draganm/kartusche/runtime"
+	"github.com/go-logr/logr"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type kartusche struct {
@@ -16,7 +16,7 @@ type kartusche struct {
 	path    string
 }
 
-func (k *kartusche) start(logger *zap.SugaredLogger) error {
+func (k *kartusche) start(logger logr.Logger) error {
 	rt, err := runtime.Open(k.path, logger)
 	if err != nil {
 		k.Error = err.Error()

@@ -22,10 +22,10 @@ import (
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/draganm/kartusche/runtime/stdlib"
 	"github.com/draganm/kartusche/runtime/template"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
 )
 
 const maxJobHistorySize = 100
@@ -43,7 +43,7 @@ type runtime struct {
 	r      *mux.Router
 	mu     *sync.Mutex
 	cron   *cron.Cron
-	logger *zap.SugaredLogger
+	logger logr.Logger
 	ctx    context.Context
 	cancel func()
 }
@@ -145,7 +145,7 @@ func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
 	return nil
 }
 
-func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger *zap.SugaredLogger) (err error) {
+func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger logr.Logger) (err error) {
 	initPath := dbpath.ToPath("init.js")
 	ex := tx.Exists(initPath)
 
@@ -179,7 +179,7 @@ func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger *zap.SugaredLo
 
 }
 
-func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger *zap.SugaredLogger) (*mux.Router, error) {
+func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger logr.Logger) (*mux.Router, error) {
 	r := mux.NewRouter()
 
 	err := addStaticHandlers(r, tx)
@@ -258,7 +258,7 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 							}
 							done, err := selectables[chosen].Fn()(val.Interface())
 							if err != nil {
-								logger.With("error", err).Error("while running selectable")
+								logger.Error(err, "while running selectable")
 								continue
 							}
 							if done {
@@ -335,7 +335,7 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 
 }
 
-func Open(fileName string, logger *zap.SugaredLogger) (Runtime, error) {
+func Open(fileName string, logger logr.Logger) (Runtime, error) {
 	db, err := embedded.Open(fileName, 0700, embedded.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("while opening database: %w", err)

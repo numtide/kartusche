@@ -10,8 +10,8 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/bolted/embedded"
 	"github.com/draganm/kartusche/server/verifier"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 )
 
 type Server struct {
@@ -24,7 +24,7 @@ type Server struct {
 
 	ServerRouter *mux.Router
 	router       *mux.Router
-	log          *zap.SugaredLogger
+	log          logr.Logger
 	verifier     verifier.AuthenticationProvider
 }
 
@@ -43,7 +43,7 @@ func createIfNotExisting(dir string, perm os.FileMode) error {
 	return nil
 }
 
-func Open(path string, domain string, verifier verifier.AuthenticationProvider, log *zap.SugaredLogger) (*Server, error) {
+func Open(path string, domain string, verifier verifier.AuthenticationProvider, log logr.Logger) (*Server, error) {
 	err := createIfNotExisting(path, 0700)
 	if err != nil {
 		return nil, err
