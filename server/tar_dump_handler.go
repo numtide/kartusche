@@ -91,7 +91,7 @@ func (s *Server) tarDump(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		s.log.With("error", err).Error("while dumping tar")
+		s.log.Error(err, "while dumping tar")
 	}
 
 }

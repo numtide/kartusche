@@ -12,7 +12,7 @@ import (
 	"github.com/draganm/bolted/dbpath"
 	"github.com/draganm/kartusche/runtime/jslib"
 	"github.com/draganm/kartusche/runtime/stdlib"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 )
 
 // TODO when runtime updated, check if jobs are unfinished, reschedule if so
@@ -25,10 +25,10 @@ var defaultQueueRunning = JobQueuePath.Append("default", "running")
 var defaultQueueFailed = JobQueuePath.Append("default", "failed")
 var defaultQueueSucceeded = JobQueuePath.Append("default", "succeeded")
 
-func JobScheduler(ctx context.Context, db bolted.Database, maxHistorySize uint64, libs *jslib.Libs, logger *zap.SugaredLogger) {
+func JobScheduler(ctx context.Context, db bolted.Database, maxHistorySize uint64, libs *jslib.Libs, logger logr.Logger) {
 
-	logger.Debug("job scheduler started")
-	defer logger.Debug("job scheduler terminated")
+	logger.Info("job scheduler started")
+	defer logger.Info("job scheduler terminated")
 
 	changes, close := db.Observe(defaultQueueScheduled.ToMatcher().AppendAnySubpathMatcher().AppendAnyElementMatcher())
 	defer close()
@@ -70,7 +70,7 @@ func JobScheduler(ctx context.Context, db bolted.Database, maxHistorySize uint64
 			})
 
 			if err != nil {
-				logger.With("error", err).Error("while starting jobs")
+				logger.Error(err, "while starting jobs")
 				continue
 			}
 
@@ -84,8 +84,8 @@ func JobScheduler(ctx context.Context, db bolted.Database, maxHistorySize uint64
 	}
 }
 
-func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jslib *jslib.Libs, id, name string, params []byte, logger *zap.SugaredLogger) func() {
-	logger = logger.With("jobId", id, "name", name)
+func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jslib *jslib.Libs, id, name string, params []byte, logger logr.Logger) func() {
+	logger = logger.WithValues("jobId", id, "name", name)
 
 	return func() {
 		vm := goja.New()
@@ -95,7 +95,7 @@ func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jsli
 
 		defer func() {
 			if err != nil {
-				logger.With("error", err).Info("job failed")
+				logger.Error(err, "job failed")
 			}
 		}()
 
@@ -106,7 +106,7 @@ func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jsli
 		}
 		vm.Set("params", p)
 
-		logger = logger.With("params", p)
+		logger = logger.WithValues("params", p)
 
 		var src string
 
@@ -143,7 +143,7 @@ func runJob(ctx context.Context, db bolted.Database, maxHistorySize uint64, jsli
 		}()
 
 		if err != nil {
-			logger.With("error", err).Error("job run failed")
+			logger.Error(err, "job run failed")
 
 			err = bolted.SugaredWrite(db, func(tx bolted.SugaredWriteTx) error {
 				jobRunningPath := defaultQueueRunning.Append(id)

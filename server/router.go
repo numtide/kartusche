@@ -18,10 +18,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) runtimeManager() (err error) {
-	log := s.log.With("process", "runtimeManager")
+	log := s.log.WithValues("process", "runtimeManager")
 	defer func() {
 		if err != nil {
-			log.With("error", err).Error("manager exited")
+			log.Error(err, "manager exited")
 		}
 	}()
 
@@ -84,10 +84,10 @@ func (s *Server) runtimeManager() (err error) {
 			if k != nil {
 				err = k.delete()
 				if err != nil {
-					log.With("error", err, "kartusche", deleteName).Error("while deleting Kartusche")
+					log.Error(err, "while deleting Kartusche", "kartusche", deleteName)
 				}
 			} else {
-				log.With("kartusche", deleteName).Warn("trying to delete not existing Kartusche")
+				log.WithValues("kartusche", deleteName).Info("trying to delete not existing Kartusche")
 			}
 
 		}

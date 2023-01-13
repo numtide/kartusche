@@ -7,6 +7,7 @@ import (
 
 	"github.com/draganm/kartusche/server"
 	"github.com/draganm/kartusche/server/verifier"
+	"github.com/go-logr/zapr"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -74,7 +75,7 @@ var Command = &cli.Command{
 		}
 
 		defer logger.Sync()
-		log := logger.Sugar()
+		log := zapr.NewLogger(logger)
 
 		vf := verifier.NewMockProvider()
 
@@ -113,7 +114,7 @@ var Command = &cli.Command{
 		if err != nil {
 			return fmt.Errorf("while starting listener: %w", err)
 		}
-		log.With("addr", l.Addr().String()).Info("server started")
+		log.Info("server started", "addr", l.Addr().String())
 
 		kartuschesAddr := c.String("kartusches-addr")
 		kl, err := net.Listen("tcp", kartuschesAddr)
@@ -126,10 +127,10 @@ var Command = &cli.Command{
 		}
 
 		go func() {
-			log.With("addr", kl.Addr().String()).Infof("listening for kartusche requests")
+			log.Info("listening for kartusche requests", "addr", kl.Addr().String())
 			err := khs.Serve(kl)
 			if err != nil {
-				log.With("server", "kartusche", "error", err).Error("while serving kartusches")
+				log.Error(err, "while serving kartusches", "sever", "kartusche")
 			}
 		}()
 

@@ -7,17 +7,17 @@ import (
 	"github.com/dop251/goja"
 	"github.com/draganm/bolted"
 	"github.com/draganm/bolted/dbpath"
+	"github.com/go-logr/logr"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type DB struct {
 	db     bolted.Database
 	vm     *goja.Runtime
-	logger *zap.SugaredLogger
+	logger logr.Logger
 }
 
-func New(db bolted.Database, vm *goja.Runtime, logger *zap.SugaredLogger) *DB {
+func New(db bolted.Database, vm *goja.Runtime, logger logr.Logger) *DB {
 	return &DB{db: db, vm: vm}
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 )
 
 type errorWithCode struct {
@@ -30,12 +30,12 @@ func (e *errorWithCode) As(err any) bool {
 	return ok
 }
 
-func handleHttpError(w http.ResponseWriter, err error, log *zap.SugaredLogger) {
+func handleHttpError(w http.ResponseWriter, err error, log logr.Logger) {
 	if err == nil {
 		return
 	}
 
-	log.With("error", err).Error("while handling http request")
+	log.Error(err, "while handling http request")
 
 	ec := &errorWithCode{}
 
