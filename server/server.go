@@ -132,6 +132,8 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
 	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
 
+	r.Methods("POST").Path("/dump").HandlerFunc(s.dumpHandler)
+
 	r.Use(s.authMiddleware)
 
 	go s.runtimeManager()
