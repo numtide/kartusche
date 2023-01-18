@@ -2,6 +2,7 @@ package code
 
 import (
 	"archive/tar"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/serverurl"
@@ -40,6 +42,11 @@ var Command = &cli.Command{
 		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
 		if err != nil {
 			return err
+		}
+
+		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
 		}
 
 		tf, err := os.CreateTemp("", "")
@@ -128,7 +135,7 @@ var Command = &cli.Command{
 			return fmt.Errorf("while seeking tar file to beginning: %w", err)
 		}
 
-		err = client.CallAPI(serverBaseURL, "PATCH", path.Join("kartusches", cfg.Name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
+		err = client.CallAPI(context.Background(), serverBaseURL, tkn, "PATCH", path.Join("kartusches", cfg.Name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
 		if err != nil {
 			return err
 		}

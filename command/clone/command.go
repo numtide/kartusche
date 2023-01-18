@@ -2,6 +2,7 @@ package clone
 
 import (
 	"archive/tar"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/config"
 	"github.com/urfave/cli/v2"
@@ -27,6 +29,8 @@ var Command = &cli.Command{
 				err = cli.Exit(fmt.Errorf("while cloning Kartusche: %w", err), 1)
 			}
 		}()
+
+		ctx := context.Background()
 
 		if c.NArg() != 1 {
 			return errors.New("kartusche url must be provided")
@@ -108,7 +112,12 @@ var Command = &cli.Command{
 
 		}
 
-		err = client.CallAPI(baseURL.String(), "GET", u.Path, nil, nil, dumpWriter, 200)
+		tkn, err := auth.GetTokenForServer(baseURL.String())
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
+		}
+
+		err = client.CallAPI(ctx, baseURL.String(), tkn, "GET", u.Path, nil, nil, dumpWriter, 200)
 		if err != nil {
 			return err
 		}

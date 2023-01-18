@@ -1,11 +1,13 @@
 package dbstats
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/runtime"
@@ -24,6 +26,8 @@ var Command = &cli.Command{
 			}
 		}()
 
+		ctx := context.Background()
+
 		serverBaseURL, err := serverurl.BaseServerURL("")
 		if err != nil {
 			return err
@@ -39,8 +43,13 @@ var Command = &cli.Command{
 			return errors.New("name of kartusche must be provided")
 		}
 
+		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
+		}
+
 		dbs := &runtime.DBStats{}
-		err = client.CallAPI(serverBaseURL, "GET", path.Join("kartusches", name, "info", "dbstats"), nil, nil, client.JSONDecoder(&dbs), 200)
+		err = client.CallAPI(ctx, serverBaseURL, tkn, "GET", path.Join("kartusches", name, "info", "dbstats"), nil, nil, client.JSONDecoder(&dbs), 200)
 		if err != nil {
 			return fmt.Errorf("while starting login process: %w", err)
 		}

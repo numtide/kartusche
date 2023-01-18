@@ -1,6 +1,7 @@
 package login
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"time"
@@ -23,6 +24,8 @@ var Command = &cli.Command{
 	},
 	Action: func(c *cli.Context) (err error) {
 
+		ctx := context.Background()
+
 		defer func() {
 			if err != nil {
 				err = cli.Exit(fmt.Errorf("while logging in: %w", err), 1)
@@ -36,7 +39,7 @@ var Command = &cli.Command{
 		serverURL := c.Args().First()
 
 		loginStartResponse := &server.LoginStartResponse{}
-		err = client.CallAPI(serverURL, "POST", "auth/login", nil, nil, client.JSONDecoder(loginStartResponse), 200)
+		err = client.CallAPI(ctx, serverURL, "", "POST", "auth/login", nil, nil, client.JSONDecoder(loginStartResponse), 200)
 		if err != nil {
 			return fmt.Errorf("while starting login process: %w", err)
 		}
@@ -60,7 +63,9 @@ var Command = &cli.Command{
 
 			var tr server.AccessTokenResponse
 			err = client.CallAPI(
+				ctx,
 				serverURL,
+				"",
 				"POST", "auth/access_token",
 				nil,
 				client.JSONEncoder(
