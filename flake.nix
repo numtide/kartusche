@@ -1,15 +1,24 @@
 {
   description = "kartusche";
 
-  outputs = { self, nixpkgs }: {
-    # Loaded with `nix run`
-    packages.x86_64-linux.default = import ./. {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    };
+  outputs = { self, nixpkgs }:
+    let
+      forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+    in
+    {
+      # Loaded with `nix run`
+      packages = forAllSystems
+        (system: {
+          default = import ./. {
+            pkgs = nixpkgs.legacyPackages.${system};
+          };
+        });
 
-    # Loaded with `nix develop`
-    devShells.x86_64-linux.default = import ./shell.nix {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      # Loaded with `nix develop`
+      devShells = forAllSystems (system: {
+        default = import ./shell.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+      });
     };
-  };
 }
