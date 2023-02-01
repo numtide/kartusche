@@ -1,12 +1,14 @@
 package upload
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/config"
@@ -58,6 +60,11 @@ var Command = &cli.Command{
 			return err
 		}
 
+		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
+		}
+
 		kf, err := os.Open(kartuscheFileName)
 		if err != nil {
 			return err
@@ -65,7 +72,7 @@ var Command = &cli.Command{
 
 		defer kf.Close()
 
-		err = client.CallAPI(serverBaseURL, "PUT", path.Join("kartusches", cfg.Name), nil, func() (io.Reader, error) { return kf, nil }, nil, 204)
+		err = client.CallAPI(context.Background(), serverBaseURL, tkn, "PUT", path.Join("kartusches", cfg.Name), nil, func() (io.Reader, error) { return kf, nil }, nil, 204)
 		if err != nil {
 			return err
 		}

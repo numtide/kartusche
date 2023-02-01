@@ -12,6 +12,7 @@ import (
 	"github.com/draganm/kartusche/server/verifier"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
+	"go.uber.org/multierr"
 )
 
 type Server struct {
@@ -132,6 +133,8 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
 	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
 
+	r.Methods("GET").Path("/dump").HandlerFunc(s.dumpHandler)
+
 	r.Use(s.authMiddleware)
 
 	go s.runtimeManager()
@@ -145,3 +148,25 @@ var authPath = dbpath.ToPath("auth")
 var openTokenRequests = authPath.Append("open_token_requests")
 var tokensPath = authPath.Append("tokens")
 var usersPath = authPath.Append("users")
+
+func (s *Server) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var err error
+	for name, k := range s.kartusches {
+		e := k.runtime.Shutdown()
+		if e != nil {
+			err = multierr.Append(err, fmt.Errorf("could not shutdown kartusche %s: %w", name, e))
+		}
+	}
+	e := s.db.Close()
+	if e != nil {
+		err = multierr.Append(err, fmt.Errorf("could not close server db: %w", err))
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

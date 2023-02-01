@@ -1,11 +1,13 @@
 package rm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path"
 	"strings"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/urfave/cli/v2"
@@ -43,7 +45,13 @@ var Command = &cli.Command{
 		if err != nil {
 			return err
 		}
-		err = client.CallAPI(serverBaseURL, "DELETE", path.Join("kartusches", name), nil, nil, nil, 204)
+
+		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
+		}
+
+		err = client.CallAPI(context.Background(), serverBaseURL, tkn, "DELETE", path.Join("kartusches", name), nil, nil, nil, 204)
 		if err != nil {
 			return err
 		}

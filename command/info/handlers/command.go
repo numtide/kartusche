@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path"
 
+	"github.com/draganm/kartusche/common/auth"
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/server"
@@ -37,8 +39,13 @@ var Command = &cli.Command{
 			return errors.New("name of kartusche must be provided")
 		}
 
+		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		if err != nil {
+			return fmt.Errorf("could not get token for server: %w", err)
+		}
+
 		handlers := []server.HandlerInfo{}
-		err = client.CallAPI(serverBaseURL, "GET", path.Join("kartusches", name, "info", "handlers"), nil, nil, client.JSONDecoder(&handlers), 200)
+		err = client.CallAPI(context.Background(), serverBaseURL, tkn, "GET", path.Join("kartusches", name, "info", "handlers"), nil, nil, client.JSONDecoder(&handlers), 200)
 		if err != nil {
 			return fmt.Errorf("while starting login process: %w", err)
 		}

@@ -1,32 +1,22 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
-	"strings"
-
-	"github.com/draganm/kartusche/common/auth"
 )
 
 func CallAPI(
-	baseURL, method, pth string,
+	ctx context.Context,
+	baseURL, tkn, method, pth string,
 	q url.Values,
 	bodyEncoder func() (io.Reader, error),
 	responseCallback func(io.Reader) error,
 	expectedStatus int,
 ) error {
-
-	var tkn string
-	if !(strings.HasPrefix(pth, "/auth/") || strings.HasPrefix(pth, "auth/")) {
-		var err error
-		tkn, err = auth.GetTokenForServer(baseURL)
-		if err != nil {
-			return err
-		}
-	}
 
 	bu, err := url.Parse(baseURL)
 	if err != nil {
@@ -47,7 +37,7 @@ func CallAPI(
 		}
 	}
 
-	req, err := http.NewRequest(method, bu.String(), body)
+	req, err := http.NewRequestWithContext(ctx, method, bu.String(), body)
 	if err != nil {
 		return fmt.Errorf("while creating request: %w", err)
 	}
