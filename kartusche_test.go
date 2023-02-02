@@ -133,7 +133,7 @@ func (w *world) iAuthenticateTheUserUsingBrowser(ctx context.Context) error {
 
 func (w *world) theUserConfigShouldContainTokenForTheServer() error {
 	out, _, err := runCLI(
-		[]string{"auth", "token"},
+		[]string{"auth", "tokens"},
 		map[string]string{
 			"KARTUSCHE_SERVER_BASE_URL": w.s.serverURL,
 		},

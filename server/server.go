@@ -12,6 +12,7 @@ import (
 	"github.com/draganm/kartusche/server/verifier"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/webdav"
 )
 
 type Server struct {
@@ -131,6 +132,12 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	r.Methods("GET").Path("/kartusches/{name}/info/dbstats").HandlerFunc(s.infoDBStats)
 	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
 	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
+
+	r.PathPrefix("/dav").Handler(&webdav.Handler{
+		Prefix:     "/dav",
+		FileSystem: s.WebdavFilesystem(),
+		LockSystem: webdav.NewMemLS(),
+	})
 
 	r.Use(s.authMiddleware)
 

@@ -12,12 +12,12 @@ import (
 
 var ErrNotFound = errors.New("auth token not found")
 
-func GetTokenForServer(server string) (string, error) {
+func GetAllTokens() (map[string]string, error) {
 	configHome := os.Getenv("XDG_CONFIG_HOME")
 	if configHome == "" {
 		hd, err := homedir.Dir()
 		if err != nil {
-			return "", fmt.Errorf("could not get user's home dir: %w", err)
+			return nil, fmt.Errorf("could not get user's home dir: %w", err)
 		}
 		configHome = filepath.Join(hd, ".config")
 	}
@@ -25,14 +25,24 @@ func GetTokenForServer(server string) (string, error) {
 	configPath := filepath.Join(configHome, "kartusche", "auth.yaml")
 	d, err := os.ReadFile(configPath)
 	if os.IsNotExist(err) {
-		return "", fmt.Errorf("while getting auth token for %s: %w", server, ErrNotFound)
+		return nil, fmt.Errorf("while getting auth tokens: %w", ErrNotFound)
 	}
 
 	tokens := map[string]string{}
 	err = yaml.Unmarshal(d, tokens)
 
 	if err != nil {
-		return "", fmt.Errorf("could not unmarshal %s: %w", configPath, err)
+		return nil, fmt.Errorf("could not unmarshal %s: %w", configPath, err)
+	}
+
+	return tokens, nil
+
+}
+
+func GetTokenForServer(server string) (string, error) {
+	tokens, err := GetAllTokens()
+	if err != nil {
+		return "", fmt.Errorf("could not get tokens: %w", err)
 	}
 
 	t, found := tokens[server]

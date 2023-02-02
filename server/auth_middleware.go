@@ -1,6 +1,8 @@
 package server
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,6 +12,14 @@ import (
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		log := s.log
+
+		requireAuthentication := func(reason string) {
+			log.Info("auth failed", "reason", reason)
+			w.Header().Set("WWW-Authenticate", `Basic realm="Kartusche"`)
+			http.Error(w, "not authorized", http.StatusUnauthorized)
+		}
+
 		if strings.HasPrefix(r.URL.Path, "/auth") {
 			next.ServeHTTP(w, r)
 			return
@@ -17,22 +27,37 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			requireAuthentication("no authorization header")
 			return
 		}
 
-		parts := strings.Split(auth, " ")
-		if len(parts) != 2 {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+		before, after, found := strings.Cut(auth, " ")
+		if !found {
+			requireAuthentication("authorization header malformed")
 			return
 		}
 
-		if strings.ToLower(parts[0]) != "bearer" {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+		var tkn string
+
+		switch strings.ToLower(before) {
+		case "bearer":
+			tkn = after
+		case "basic":
+			decoded, err := base64.StdEncoding.DecodeString(after)
+			if err != nil {
+				requireAuthentication("basic auth malformed")
+				return
+			}
+			_, password, found := strings.Cut(string(decoded), ":")
+			if !found {
+				requireAuthentication("basic auth malformed")
+				return
+			}
+			tkn = password
+		default:
+			requireAuthentication(fmt.Sprintf("unsupported auth method %s", before))
 			return
 		}
-
-		tkn := parts[1]
 
 		tokenValid := false
 
@@ -42,16 +67,15 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
+			log.Error(err, "could not check token")
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
 		if !tokenValid {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			requireAuthentication("token invalid")
 			return
 		}
-
-		// TODO: add user info to the request context
 
 		next.ServeHTTP(w, r)
 
