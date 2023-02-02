@@ -133,8 +133,8 @@ func Open(path string, domain string, verifier verifier.AuthenticationProvider, 
 	r.Methods("DELETE").Path("/kartusches/{name}").HandlerFunc(s.rm)
 	r.Methods("PATCH").Path("/kartusches/{name}/code").HandlerFunc(s.updateCode)
 
-	r.PathPrefix("/auth/dav").Handler(&webdav.Handler{
-		Prefix:     "/auth/dav",
+	r.PathPrefix("/dav").Handler(&webdav.Handler{
+		Prefix:     "/dav",
 		FileSystem: s.WebdavFilesystem(),
 		LockSystem: webdav.NewMemLS(),
 	})
