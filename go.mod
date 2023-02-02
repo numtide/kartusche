@@ -1,11 +1,11 @@
 module github.com/draganm/kartusche
 
-go 1.18
+go 1.19
 
 require (
 	github.com/cbroglie/mustache v1.3.1
 	github.com/dop251/goja v0.0.0-20221229151140-b95230a9dbad
-	github.com/draganm/bolted v0.9.2
+	github.com/draganm/bolted v0.10.2
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/gorilla/mux v1.8.0
@@ -32,14 +32,16 @@ require (
 	github.com/stretchr/testify v1.7.1 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 )
 
 require (
 	github.com/cucumber/godog v0.12.5
+	github.com/dsnet/golib/memfile v1.0.0
 	github.com/go-logr/logr v1.2.2
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/net v0.5.0
 )
