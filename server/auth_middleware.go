@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,14 @@ import (
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		log := s.log
+
+		requireAuthentication := func(reason string) {
+			log.Info("auth failed", "reason", reason)
+			w.Header().Set("WWW-Authenticate", `Basic realm="Kartusche"`)
+			http.Error(w, "not authorized", http.StatusUnauthorized)
+		}
+
 		if strings.HasPrefix(r.URL.Path, "/auth") {
 			next.ServeHTTP(w, r)
 			return
@@ -18,38 +27,36 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			requireAuthentication("no authorization header")
 			return
 		}
 
 		before, after, found := strings.Cut(auth, " ")
 		if !found {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		if strings.ToLower(before) != "bearer" {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			requireAuthentication("authorization header malformed")
 			return
 		}
 
 		var tkn string
 
-		switch strings.ToLower(after) {
+		switch strings.ToLower(before) {
 		case "bearer":
 			tkn = after
 		case "basic":
 			decoded, err := base64.StdEncoding.DecodeString(after)
 			if err != nil {
-				http.Error(w, "not authorized", http.StatusUnauthorized)
+				requireAuthentication("basic auth malformed")
 				return
 			}
 			_, password, found := strings.Cut(string(decoded), ":")
 			if !found {
-				http.Error(w, "not authorized", http.StatusUnauthorized)
+				requireAuthentication("basic auth malformed")
 				return
 			}
 			tkn = password
+		default:
+			requireAuthentication(fmt.Sprintf("unsupported auth method %s", before))
+			return
 		}
 
 		tokenValid := false
@@ -60,12 +67,13 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
+			log.Error(err, "could not check token")
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
 		if !tokenValid {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+			requireAuthentication("token invalid")
 			return
 		}
 
