@@ -1,4 +1,4 @@
-{ pkgs ? import (import ./nix/sources.nix).nixpkgs { } }:
+{ pkgs ? import <nixpkgs> { } }:
 pkgs.mkShell {
   packages = [
     pkgs.gcc
@@ -17,4 +17,3 @@ pkgs.mkShell {
     pkgs.nixpkgs-fmt
   ];
 }
-
