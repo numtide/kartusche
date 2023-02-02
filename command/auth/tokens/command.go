@@ -1,15 +1,15 @@
-package token
+package tokens
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/draganm/kartusche/common/auth"
-	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/urfave/cli/v2"
 )
 
 var Command = &cli.Command{
-	Name:  "token",
+	Name:  "tokens",
 	Flags: []cli.Flag{},
 	Action: func(c *cli.Context) (err error) {
 
@@ -19,18 +19,23 @@ var Command = &cli.Command{
 			}
 		}()
 
-		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
+		tokensMap, err := auth.GetAllTokens()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not get server tokens: %w", err)
 		}
 
-		tkn, err := auth.GetTokenForServer(serverBaseURL)
+		servers := []string{}
 
-		if err != nil {
-			return err
+		for s := range tokensMap {
+			servers = append(servers, s)
 		}
 
-		fmt.Println(tkn + "xx")
+		sort.Strings(servers)
+
+		for _, s := range servers {
+			fmt.Println(s, tokensMap[s])
+		}
+
 		return nil
 
 	},
