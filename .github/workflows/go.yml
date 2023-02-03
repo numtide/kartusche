@@ -3,7 +3,7 @@ name: Go Tests
 on:
   # Run one or the other
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request: {}
 
 jobs:
