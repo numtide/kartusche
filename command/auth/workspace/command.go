@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/draganm/kartusche/common/auth"
 	"github.com/urfave/cli/v2"
@@ -62,7 +61,19 @@ var Command = &cli.Command{
 
 			u.User = url.UserPassword("kartusche", token)
 			u = u.JoinPath("dav")
-			u.Scheme = strings.Replace(u.Scheme, "http", "webdav", 1)
+
+			scheme := u.Scheme
+			u.Scheme = "webdav"
+
+			q := u.Query()
+
+			ssl := "0"
+			if scheme == "https" {
+				ssl = "1"
+			}
+			q.Set("ssl", ssl)
+
+			u.RawQuery = q.Encode()
 
 			workspaceFile.Folders = append(workspaceFile.Folders, WorkspaceFolder{
 				URI:  u.String(),
