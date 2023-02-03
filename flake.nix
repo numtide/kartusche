@@ -1,18 +1,19 @@
 {
   description = "kartusche";
 
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
   outputs = { self, nixpkgs }:
     let
       forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
     in
     {
       # Loaded with `nix run`
-      packages = forAllSystems
-        (system: {
-          default = import ./. {
-            pkgs = nixpkgs.legacyPackages.${system};
-          };
-        });
+      packages = forAllSystems (system: {
+        default = import ./. {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+      });
 
       # Loaded with `nix develop`
       devShells = forAllSystems (system: {

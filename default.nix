@@ -1,4 +1,4 @@
-{ pkgs ? import (import ./nix/sources.nix).nixpkgs { } }:
+{ pkgs ? import <nixpkgs> { } }:
 pkgs.buildGo119Module {
   pname = "kartusche";
   version = pkgs.lib.fileContents ./version.txt;
