@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 
@@ -29,6 +30,7 @@ func SetStandardLibMethods(vm *goja.Runtime, jslib *jslib.Libs, db bolted.Databa
 	vm.Set("queryEscape", url.QueryEscape)
 	vm.Set("parseUrl", url.Parse)
 	vm.Set("queryUnescape", url.QueryEscape)
+	vm.Set("base64", base64.StdEncoding)
 
 	vm.Set("uuidv4", func() (string, error) {
 		id, err := uuid.NewV4()
