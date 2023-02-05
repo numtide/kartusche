@@ -181,6 +181,7 @@ func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger logr.Logger) (
 
 func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger logr.Logger) (*mux.Router, error) {
 	r := mux.NewRouter()
+	r.StrictSlash(true)
 
 	err := addStaticHandlers(r, tx)
 	if err != nil {
@@ -215,7 +216,7 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 					return nil, fmt.Errorf("while compiling %s: %w", current.Append(key).String(), err)
 				}
 
-				r.Methods(method).Path("/" + path).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 					vars := mux.Vars(r)
 					vm := goja.New()
 					stdlib.SetStandardLibMethods(vm, jslib, db, current, logger)
@@ -324,8 +325,10 @@ func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Data
 						http.Error(w, err.Error(), 500)
 						return
 					}
-				})
+				}
 
+				r.Methods(method).Path("/" + path).HandlerFunc(handlerFunc)
+				r.Methods(method).Path("/" + path + "/").HandlerFunc(handlerFunc)
 			}
 		}
 
