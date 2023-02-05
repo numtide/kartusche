@@ -181,7 +181,7 @@ func runInit(tx bolted.SugaredWriteTx, db bolted.Database, logger logr.Logger) (
 
 func initializeRouter(tx bolted.SugaredReadTx, jslib *jslib.Libs, db bolted.Database, logger logr.Logger) (*mux.Router, error) {
 	r := mux.NewRouter()
-	r.StrictSlash(true)
+	r.StrictSlash(false)
 
 	err := addStaticHandlers(r, tx)
 	if err != nil {
