@@ -1,35 +1,54 @@
-package code
+package develop
 
 import (
 	"archive/tar"
 	"fmt"
 	"io"
 	"os"
-	"path"
+	gopath "path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/draganm/kartusche/common/client"
 	"github.com/draganm/kartusche/common/paths"
 	"github.com/draganm/kartusche/common/serverurl"
 	"github.com/draganm/kartusche/config"
+	"github.com/fsnotify/fsnotify"
+	"github.com/go-logr/zapr"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 )
 
 var Command = &cli.Command{
-	Name:  "code",
-	Flags: []cli.Flag{},
+	Name: "develop",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "addr",
+			EnvVars: []string{"KARTUSCHE_ADDR"},
+			Value:   "localhost:5001",
+		},
+	},
 	Action: func(c *cli.Context) (err error) {
 		defer func() {
 			if err != nil {
-				err = cli.Exit(fmt.Errorf("while uploading Kartusche: %w", err), 1)
+				err = cli.Exit(fmt.Errorf("while running dev server: %w", err), 1)
 			}
 		}()
 
-		dir := c.Args().First()
+		dl, err := zap.NewDevelopment()
+		if err != nil {
+			return fmt.Errorf("while starting logger: %w", err)
+		}
 
-		if dir == "" {
-			dir = "."
+		defer dl.Sync()
+
+		log := zapr.NewLogger(dl)
+
+		dir := "."
+
+		if err != nil {
+			return err
 		}
 
 		serverBaseURL, err := serverurl.BaseServerURL(c.Args().First())
@@ -37,9 +56,41 @@ var Command = &cli.Command{
 			return err
 		}
 
-		err = UpdateServerCode(dir, serverBaseURL)
+		log.Info("syncing with server", "server", serverBaseURL)
 
-		fmt.Println("code updated")
+		w, err := fsnotify.NewWatcher()
+		if err != nil {
+			return fmt.Errorf("while creating fs notify watcher")
+		}
+
+		names := make(chan string, 20)
+		names <- "."
+		done := make(chan error)
+		go watch(dir, w, names, done)
+		for name := range names {
+			// debounce
+
+			allNames := []string{name}
+		inner:
+			for {
+				select {
+				case name = <-names:
+					allNames = append(allNames, name)
+				case <-time.NewTimer(100 * time.Millisecond).C:
+					break inner
+				}
+			}
+
+			log.Info("updating server", "changedFiles", allNames)
+
+			err := UpdateServerCode(dir, serverBaseURL)
+			if err != nil {
+				log.Error(err, "failed to update server")
+				continue
+			}
+			log.Info("updated server")
+		}
+
 		return nil
 
 	},
@@ -138,7 +189,7 @@ func UpdateServerCode(dir, serverBaseURL string) error {
 		return fmt.Errorf("while seeking tar file to beginning: %w", err)
 	}
 
-	err = client.CallAPI(serverBaseURL, "PATCH", path.Join("kartusches", cfg.Name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
+	err = client.CallAPI(serverBaseURL, "PATCH", gopath.Join("kartusches", cfg.Name, "code"), nil, func() (io.Reader, error) { return tf, nil }, nil, 204)
 	if err != nil {
 		return err
 	}
