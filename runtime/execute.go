@@ -34,6 +34,11 @@ type Runtime interface {
 	http.Handler
 	Shutdown() error
 	Update(func(tx bolted.SugaredWriteTx) error) error
+
+	// Write won't reload any handlers, please don't
+	// update any code, static content and templates
+	// with this!
+	Write(func(tx bolted.SugaredWriteTx) error) error
 	Read(func(tx bolted.SugaredReadTx) error) error
 	GetDBStats() (*DBStats, error)
 }
@@ -94,6 +99,10 @@ func (r *runtime) Shutdown() error {
 
 func (r *runtime) Read(fn func(tx bolted.SugaredReadTx) error) error {
 	return bolted.SugaredRead(r.db, fn)
+}
+
+func (r *runtime) Write(fn func(tx bolted.SugaredWriteTx) error) error {
+	return bolted.SugaredWrite(r.db, fn)
 }
 
 func (r *runtime) Update(fn func(tx bolted.SugaredWriteTx) error) error {
