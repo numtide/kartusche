@@ -11,7 +11,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: cachix/install-nix-action@v15
+      - uses: NixOS/nix-installer-action@main
       - uses: actions/checkout@v2
         # Pull all the dependencies
       - name: Load the nix-shell
