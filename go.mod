@@ -9,7 +9,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/urfave/cli/v2 v2.3.0
