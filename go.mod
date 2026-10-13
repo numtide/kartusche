@@ -1,6 +1,6 @@
 module github.com/draganm/kartusche
 
-go 1.19
+go 1.25.0
 
 require (
 	github.com/cbroglie/mustache v1.3.1
@@ -32,8 +32,8 @@ require (
 	github.com/stretchr/testify v1.7.1 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
 
 require (
@@ -43,5 +43,5 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/net v0.5.0
+	golang.org/x/net v0.55.0
 )
